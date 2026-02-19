@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  VISITOR
+  RENTER
+  INVESTOR
+  LANDLORD_MARKETING
+  LANDLORD_MANAGED
+  ADMIN
+}
+
+enum PropertyType {
+  OFFICE
+  COWORKING
+}
+
+enum PropertyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  phone         String?
+  role          UserRole  @default(RENTER)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  properties Property[]
+  ratings    Rating[]
+  favorites  Favorite[]
+  leads      Lead[]
+  startups   Startup[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Property {
+  id            String         @id @default(cuid())
+  title         String
+  titleAr       String?
+  description   String
+  descriptionAr String?
+  price         Float
+  size          Float
+  rooms         Int?
+  type          PropertyType
+  status        PropertyStatus @default(PENDING)
+  address       String
+  city          String
+  district      String
+  lat           Float?
+  lng           Float?
+  amenities     String[]
+  images        String[]
+  featured      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  ownerId   String
+  owner     User       @relation(fields: [ownerId], references: [id])
+  ratings   Rating[]
+  favorites Favorite[]
+  leads     Lead[]
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  stars     Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([userId, propertyId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([userId, propertyId])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  source    String   @default("whatsapp")
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+}
+
+model Startup {
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  pitchDeckUrl  String?
+  fundingNeeded Float?
+  stage         String
+  sector        String
+  status        PropertyStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  founderId String
+  founder   User   @relation(fields: [founderId], references: [id])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
