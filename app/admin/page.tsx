@@ -1,8 +1,8 @@
-﻿export default function LeadsPage() {
+﻿export default function AdminDashboard() {
     return (
         <div>
-            <h1 className="mb-6 text-3xl font-bold">Leads</h1>
-            <p className="text-gray-400">Manage leads here.</p>
+            <h1 className="mb-6 text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-gray-400">Welcome to the admin panel.</p>
         </div>
     );
 }
