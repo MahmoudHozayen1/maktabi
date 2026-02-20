@@ -1,4 +1,6 @@
-{
+﻿import fs from 'fs';
+
+const packageJson = {
   "name": "maktabi",
   "version": "0.1.0",
   "private": true,
@@ -47,4 +49,7 @@
     "glob": "^11.0.0",
     "rimraf": "^6.0.0"
   }
-}
+};
+
+fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2), 'utf8');
+console.log('✅ package.json fixed!');
