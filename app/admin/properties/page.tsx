@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Search, Check, X, Eye, Trash2, Plus } from 'lucide-react';
+import { Building2, Search, Check, X, Eye, Trash2, Pencil } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
 
@@ -14,6 +14,8 @@ interface Property {
     price: number;
     city: string;
     district: string;
+    lat: number | null;
+    lng: number | null;
     createdAt: string;
     owner: {
         name: string;
@@ -32,12 +34,13 @@ export default function AdminPropertiesPage() {
         fetchProperties();
     }, [statusFilter, typeFilter]);
 
-    const fetchProperties = async () => {
+    const fetchProperties = async (searchTerm?: string) => {
         setLoading(true);
         try {
             const params = new URLSearchParams();
             if (statusFilter) params.set('status', statusFilter);
             if (typeFilter) params.set('type', typeFilter);
+            if (searchTerm || search) params.set('search', searchTerm || search);
 
             const res = await fetch(`/api/admin/properties?${params.toString()}`);
             const data = await res.json();
@@ -51,13 +54,12 @@ export default function AdminPropertiesPage() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        const filtered = properties.filter(
-            (p) =>
-                p.title.toLowerCase().includes(search.toLowerCase()) ||
-                p.serialNumber.toString().includes(search)
-        );
-        setProperties(filtered);
-        if (!search) fetchProperties();
+        fetchProperties(search);
+    };
+
+    const clearSearch = () => {
+        setSearch('');
+        fetchProperties('');
     };
 
     const updateStatus = async (id: string, status: 'APPROVED' | 'REJECTED') => {
@@ -130,6 +132,15 @@ export default function AdminPropertiesPage() {
                             placeholder="Search by # or title..."
                             className="w-64 rounded-lg border border-gray-700 bg-gray-800 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                         />
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
                     </div>
                     <Button type="submit" variant="secondary">Search</Button>
                 </form>
@@ -157,7 +168,7 @@ export default function AdminPropertiesPage() {
             </div>
 
             {/* Stats */}
-            <div className="mb-6 grid gap-4 sm:grid-cols-4">
+            <div className="mb-6 grid gap-4 sm:grid-cols-5">
                 <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
                     <div className="text-2xl font-bold">{properties.length}</div>
                     <div className="text-sm text-gray-400">Total</div>
@@ -180,6 +191,12 @@ export default function AdminPropertiesPage() {
                     </div>
                     <div className="text-sm text-gray-400">Rejected</div>
                 </div>
+                <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+                    <div className="text-2xl font-bold text-blue-500">
+                        {properties.filter((p) => p.lat && p.lng).length}
+                    </div>
+                    <div className="text-sm text-gray-400">With Map</div>
+                </div>
             </div>
 
             {/* Table */}
@@ -192,7 +209,7 @@ export default function AdminPropertiesPage() {
                                 <th className="px-6 py-4">Property</th>
                                 <th className="px-6 py-4">Type</th>
                                 <th className="px-6 py-4">Price</th>
-                                <th className="px-6 py-4">Owner</th>
+                                <th className="px-6 py-4">Map</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
@@ -232,10 +249,17 @@ export default function AdminPropertiesPage() {
                                             {property.price.toLocaleString()} EGP
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm">
-                                                <div>{property.owner?.name || 'N/A'}</div>
-                                                <div className="text-gray-400">{property.owner?.email}</div>
-                                            </div>
+                                            {property.lat && property.lng ? (
+                                                <span className="inline-flex items-center gap-1 text-emerald-500">
+                                                    <Check className="h-4 w-4" />
+                                                    <span className="text-xs">Set</span>
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-yellow-500">
+                                                    <X className="h-4 w-4" />
+                                                    <span className="text-xs">Missing</span>
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusBadge(property.status)}`}>
@@ -251,6 +275,13 @@ export default function AdminPropertiesPage() {
                                                     title="View"
                                                 >
                                                     <Eye className="h-4 w-4" />
+                                                </Link>
+                                                <Link
+                                                    href={`/admin/properties/${property.id}`}
+                                                    className="rounded-lg p-2 text-gray-400 hover:bg-blue-500/10 hover:text-blue-500"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
                                                 </Link>
                                                 {property.status === 'PENDING' && (
                                                     <>

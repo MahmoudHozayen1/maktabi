@@ -6,6 +6,43 @@ import prisma from '@/lib/prisma';
 
 const ADMIN_ROLES = ['ADMIN', 'OWNER'];
 
+// GET single property
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const session = await getServerSession(authOptions);
+    const { id } = await params;
+
+    if (!session || !ADMIN_ROLES.includes(session.user?.role || '')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const property = await prisma.property.findUnique({
+            where: { id },
+            include: {
+                owner: {
+                    select: {
+                        name: true,
+                        email: true,
+                    },
+                },
+            },
+        });
+
+        if (!property) {
+            return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ property });
+    } catch (error) {
+        console.error('Error fetching property:', error);
+        return NextResponse.json({ error: 'Failed to fetch property' }, { status: 500 });
+    }
+}
+
+// PUT update property
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -30,7 +67,9 @@ export async function PUT(
         revalidatePath('/coworking');
         revalidatePath(`/offices/${id}`);
         revalidatePath(`/coworking/${id}`);
+        revalidatePath('/map');
         revalidatePath('/');
+        revalidatePath('/admin/properties');
 
         return NextResponse.json({ property });
     } catch (error) {
@@ -39,6 +78,7 @@ export async function PUT(
     }
 }
 
+// DELETE property
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -58,7 +98,9 @@ export async function DELETE(
         // Revalidate pages
         revalidatePath('/offices');
         revalidatePath('/coworking');
+        revalidatePath('/map');
         revalidatePath('/');
+        revalidatePath('/admin/properties');
 
         return NextResponse.json({ message: 'Property deleted' });
     } catch (error) {
