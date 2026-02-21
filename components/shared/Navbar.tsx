@@ -4,13 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X, User, LogOut, Heart, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { Menu, X, User, LogOut, Heart, LayoutDashboard, ChevronDown, Shield } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+
+    // Check if user is admin or owner
+    const userRole = session?.user?.role;
+    const isAdmin = userRole === 'ADMIN' || userRole === 'OWNER';
 
     useEffect(() => {
         const handleScroll = () => {
@@ -42,7 +46,7 @@ export default function Navbar() {
                         alt="MAKTABI"
                         width={64}
                         height={64}
-                        className="rounded-lg"
+                        className="rounded-xl"
                     />
                     <span className="text-2xl font-bold tracking-tight text-gray-900">
                         MAKTABI
@@ -67,6 +71,17 @@ export default function Navbar() {
                 <div className="hidden items-center gap-3 md:flex">
                     {session ? (
                         <div className="flex items-center gap-3">
+                            {/* Admin Dashboard Button - Only shows for Admin/Owner */}
+                            {isAdmin && (
+                                <Link
+                                    href="/admin"
+                                    className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800"
+                                >
+                                    <Shield className="h-4 w-4" />
+                                    Admin
+                                </Link>
+                            )}
+
                             <Link
                                 href="/favorites"
                                 className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 transition-all hover:bg-gray-100 hover:text-emerald-600"
@@ -96,6 +111,19 @@ export default function Navbar() {
                                         <span className="text-lg">+</span>
                                         List Property
                                     </Link>
+                                    {/* Admin link in dropdown too */}
+                                    {isAdmin && (
+                                        <>
+                                            <hr className="my-2 border-gray-200" />
+                                            <Link
+                                                href="/admin"
+                                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                                            >
+                                                <Shield className="h-4 w-4" />
+                                                Admin Panel
+                                            </Link>
+                                        </>
+                                    )}
                                     <hr className="my-2 border-gray-200" />
                                     <button
                                         onClick={() => signOut()}
@@ -147,6 +175,17 @@ export default function Navbar() {
                         <hr className="my-3 border-gray-200" />
                         {session ? (
                             <>
+                                {/* Admin link in mobile menu */}
+                                {isAdmin && (
+                                    <Link
+                                        href="/admin"
+                                        className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-white"
+                                        onClick={() => setIsOpen(false)}
+                                    >
+                                        <Shield className="h-4 w-4" />
+                                        Admin Dashboard
+                                    </Link>
+                                )}
                                 <Link
                                     href="/favorites"
                                     className="rounded-lg px-4 py-3 text-gray-600 hover:bg-gray-100"
