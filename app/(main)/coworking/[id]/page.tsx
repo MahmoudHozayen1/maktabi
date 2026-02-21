@@ -1,6 +1,7 @@
 ﻿import Link from 'next/link';
-import { MapPin, Users, Clock, Wifi, Coffee, Monitor, Phone } from 'lucide-react';
+import { MapPin, Users, Clock, Wifi, Coffee, Monitor } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import TrackLeadButton from '@/components/TrackLeadButton';
 
 export default async function CoworkingDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -140,15 +141,11 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                         </div>
 
                         <div className="space-y-3">
-                            <a
-                                href={`https://wa.me/${space.contact.phone.replace('+', '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-3 font-medium text-white hover:bg-emerald-700"
-                            >
-                                <Phone className="h-5 w-5" />
-                                WhatsApp
-                            </a>
+                            {/* Track Lead Button */}
+                            <TrackLeadButton
+                                propertyId={space.id}
+                                phoneNumber={space.contact.phone}
+                            />
                             <Button variant="secondary" className="w-full">
                                 Book a Tour
                             </Button>

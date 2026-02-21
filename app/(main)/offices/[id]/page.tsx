@@ -1,6 +1,7 @@
 ﻿import Link from 'next/link';
-import { MapPin, Building2, Ruler, Car, Wifi, Shield, Phone } from 'lucide-react';
+import { MapPin, Building2, Ruler, Car, Wifi, Shield } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import TrackLeadButton from '@/components/TrackLeadButton';
 
 export default async function OfficeDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -114,15 +115,11 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
                         </div>
 
                         <div className="space-y-3">
-                            <a
-                                href={`https://wa.me/${office.landlord.phone.replace('+', '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-3 font-medium text-white hover:bg-emerald-700"
-                            >
-                                <Phone className="h-5 w-5" />
-                                WhatsApp
-                            </a>
+                            {/* Track Lead Button */}
+                            <TrackLeadButton
+                                propertyId={office.id}
+                                phoneNumber={office.landlord.phone}
+                            />
                             <Button variant="secondary" className="w-full">
                                 Schedule Visit
                             </Button>
