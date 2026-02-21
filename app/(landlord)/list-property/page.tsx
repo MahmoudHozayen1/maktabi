@@ -1,4 +1,4 @@
-﻿landlord) /list-property/page.tsx
+﻿
 'use client';
 
 import { useState } from 'react';
