@@ -1,4 +1,5 @@
-﻿'use client';
+﻿
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, Lock, User, Phone } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PasswordInput from '@/components/ui/PasswordInput';
 import { registerSchema, RegisterInput } from '@/lib/validations';
 
 interface ApiError {
@@ -97,19 +99,17 @@ export default function RegisterForm() {
                 {...register('phone')}
             />
 
-            <Input
+            <PasswordInput
                 label="Password"
-                type="password"
                 placeholder="••••••••"
                 icon={<Lock className="h-5 w-5" />}
                 error={errors.password?.message}
                 {...register('password')}
             />
 
-            <Input
+            <PasswordInput
                 label="Confirm Password"
-                type="password"
-                placeholder="Enter password"
+                placeholder="••••••••"
                 icon={<Lock className="h-5 w-5" />}
                 error={errors.confirmPassword?.message}
                 {...register('confirmPassword')}

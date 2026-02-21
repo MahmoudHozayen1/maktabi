@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, Lock } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PasswordInput from '@/components/ui/PasswordInput';
 import { loginSchema, LoginInput } from '@/lib/validations';
 
 export default function LoginForm() {
@@ -68,9 +69,8 @@ export default function LoginForm() {
                 {...register('email')}
             />
 
-            <Input
+            <PasswordInput
                 label="Password"
-                type="password"
                 placeholder="Enter your password"
                 icon={<Lock className="h-5 w-5" />}
                 error={errors.password?.message}
