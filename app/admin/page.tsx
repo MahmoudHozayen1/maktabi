@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Building2, Users, Rocket, MessageSquare, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, Users, Rocket, MessageSquare, Clock, CheckCircle } from 'lucide-react';
 
 interface Stats {
     totalUsers: number;

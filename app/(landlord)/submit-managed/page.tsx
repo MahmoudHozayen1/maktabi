@@ -31,6 +31,7 @@ export default function SubmitManagedPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [error, setError] = useState('');
 
     const {
         register,
@@ -42,12 +43,23 @@ export default function SubmitManagedPage() {
 
     const onSubmit = async (data: ManagedInput) => {
         setIsLoading(true);
+        setError('');
+
         try {
-            // TODO: Submit to API
-            console.log(data);
+            const res = await fetch('/api/managed-requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!res.ok) {
+                const result = await res.json();
+                throw new Error(result.error || 'Failed to submit request');
+            }
+
             setIsSubmitted(true);
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Something went wrong');
         } finally {
             setIsLoading(false);
         }
@@ -57,8 +69,8 @@ export default function SubmitManagedPage() {
         return (
             <div className="mx-auto max-w-2xl px-6 py-24 text-center">
                 <CheckCircle className="mx-auto mb-6 h-16 w-16 text-emerald-500" />
-                <h1 className="mb-4 text-3xl font-bold">Request Submitted!</h1>
-                <p className="mb-8 text-gray-400">
+                <h1 className="mb-4 text-3xl font-bold text-gray-900">Request Submitted!</h1>
+                <p className="mb-8 text-gray-600">
                     Our team will contact you within 24 hours to discuss your property management needs.
                 </p>
                 <Button onClick={() => router.push('/dashboard')}>
@@ -71,10 +83,10 @@ export default function SubmitManagedPage() {
     return (
         <div className="mx-auto max-w-6xl px-6 py-16">
             <div className="mb-12 text-center">
-                <h1 className="text-4xl font-bold">
+                <h1 className="text-4xl font-bold text-gray-900">
                     Full Property <span className="text-emerald-500">Management</span>
                 </h1>
-                <p className="mt-4 text-gray-400">
+                <p className="mt-4 text-gray-600">
                     Let us handle everything — from listing to tenant management
                 </p>
             </div>
@@ -84,19 +96,25 @@ export default function SubmitManagedPage() {
                 {benefits.map((benefit) => (
                     <div
                         key={benefit.title}
-                        className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-center"
+                        className="rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm"
                     >
                         <benefit.icon className="mx-auto mb-4 h-10 w-10 text-emerald-500" />
-                        <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                        <p className="text-sm text-gray-400">{benefit.description}</p>
+                        <h3 className="mb-2 font-bold text-gray-900">{benefit.title}</h3>
+                        <p className="text-sm text-gray-600">{benefit.description}</p>
                     </div>
                 ))}
             </div>
 
             {/* Form */}
             <div className="mx-auto max-w-2xl">
-                <div className="rounded-xl border border-gray-800 bg-gray-900 p-8">
-                    <h2 className="mb-6 text-xl font-bold">Request a Consultation</h2>
+                <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+                    <h2 className="mb-6 text-xl font-bold text-gray-900">Request a Consultation</h2>
+
+                    {error && (
+                        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-2">
@@ -139,13 +157,13 @@ export default function SubmitManagedPage() {
                         />
 
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-300">
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
                                 Additional Message (Optional)
                             </label>
                             <textarea
                                 rows={4}
                                 placeholder="Tell us more about your property..."
-                                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
                                 {...register('message')}
                             />
                         </div>

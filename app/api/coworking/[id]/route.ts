@@ -1,16 +1,32 @@
-﻿import { NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
-export async function GET() {
-    // TODO: Fetch single coworking space
-    return NextResponse.json({ coworking: null });
-}
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
 
-export async function PUT() {
-    // TODO: Update coworking space
-    return NextResponse.json({ message: 'Updated' });
-}
+        const coworking = await prisma.property.findUnique({
+            where: { id, type: 'COWORKING' },
+            include: {
+                owner: {
+                    select: {
+                        name: true,
+                        phone: true,
+                    },
+                },
+            },
+        });
 
-export async function DELETE() {
-    // TODO: Delete coworking space
-    return NextResponse.json({ message: 'Deleted' });
+        if (!coworking) {
+            return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ coworking });
+    } catch (error) {
+        console.error('Error fetching coworking:', error);
+        return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    }
 }
