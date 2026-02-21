@@ -1,12 +1,18 @@
 ﻿import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Rocket, Users, TrendingUp, Globe, Mail, Phone } from 'lucide-react';
+import { getServerSession } from 'next-auth';
+import { Rocket, Users, TrendingUp, Globe, Mail, Phone, Lock } from 'lucide-react';
+import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 export const revalidate = 60;
 
 export default async function StartupDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
+
+    // Get session to check if user is admin/owner
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'OWNER';
 
     const startup = await prisma.startup.findUnique({
         where: { id },
@@ -25,8 +31,9 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
         notFound();
     }
 
+    // WhatsApp message for investment inquiry (only used by admins)
     const whatsappMessage = encodeURIComponent(
-        `Hello, I am interested in investing in startup #${startup.serialNumber} - ${startup.name}. I would like to learn more about this opportunity.`
+        `Hello, I would like to learn more on investment #${startup.serialNumber} - ${startup.name}`
     );
     const whatsappNumber = startup.founder.phone?.replace('+', '') || '201554515541';
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
@@ -74,24 +81,40 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
                     </div>
                 )}
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 py-3 font-medium text-white hover:bg-emerald-700"
-                    >
-                        <Phone className="h-5 w-5" />
-                        Contact via WhatsApp
-                    </a>
-                    <a
-                        href={`mailto:${startup.founder.email}?subject=Investment Inquiry: Startup %23${startup.serialNumber} - ${startup.name}`}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                        <Mail className="h-5 w-5" />
-                        Send Email
-                    </a>
-                </div>
+                {/* Contact buttons - Only for Admins/Owners */}
+                {isAdmin ? (
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <a
+                            href={whatsappUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 py-3 font-medium text-white hover:bg-emerald-700"
+                        >
+                            <Phone className="h-5 w-5" />
+                            Contact via WhatsApp
+                        </a>
+                        <a
+                            href={`mailto:${startup.founder.email}?subject=Investment Inquiry: Startup %23${startup.serialNumber} - ${startup.name}`}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            <Mail className="h-5 w-5" />
+                            Send Email
+                        </a>
+                    </div>
+                ) : (
+                    <div className="rounded-lg bg-gray-50 p-4 text-center">
+                        <Lock className="mx-auto mb-2 h-6 w-6 text-gray-400" />
+                        <p className="text-sm text-gray-500">
+                            Contact information is only available to verified investors.
+                        </p>
+                        <Link
+                            href="/login"
+                            className="mt-2 inline-block text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                        >
+                            Login as investor →
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Stats */}
@@ -119,43 +142,46 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
                 <p className="text-gray-600 leading-relaxed">{startup.description}</p>
             </div>
 
-            {/* Contact */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-xl font-bold text-gray-900">Contact</h2>
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex-1">
-                        <p className="text-sm text-gray-500">Founded by</p>
-                        <p className="font-medium text-gray-900">{startup.founder.name}</p>
-                    </div>
-                    {startup.pitchDeckUrl && (
+            {/* Contact - Only for Admins/Owners */}
+            {isAdmin && (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                    <h2 className="mb-4 text-xl font-bold text-gray-900">Contact Information</h2>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex-1">
+                            <p className="text-sm text-gray-500">Founded by</p>
+                            <p className="font-medium text-gray-900">{startup.founder.name}</p>
+                            <p className="text-sm text-gray-500">{startup.founder.email}</p>
+                        </div>
+                        {startup.pitchDeckUrl && (
+                            <a
+                                href={startup.pitchDeckUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:border-emerald-500 hover:text-emerald-600"
+                            >
+                                <Globe className="h-4 w-4" />
+                                Website
+                            </a>
+                        )}
                         <a
-                            href={startup.pitchDeckUrl}
+                            href={`mailto:${startup.founder.email}`}
+                            className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:border-emerald-500 hover:text-emerald-600"
+                        >
+                            <Mail className="h-4 w-4" />
+                            Email
+                        </a>
+                        <a
+                            href={whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:border-emerald-500 hover:text-emerald-600"
                         >
-                            <Globe className="h-4 w-4" />
-                            Website
+                            <Phone className="h-4 w-4" />
+                            WhatsApp
                         </a>
-                    )}
-                    <a
-                        href={`mailto:${startup.founder.email}`}
-                        className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:border-emerald-500 hover:text-emerald-600"
-                    >
-                        <Mail className="h-4 w-4" />
-                        Email
-                    </a>
-                    <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:border-emerald-500 hover:text-emerald-600"
-                    >
-                        <Phone className="h-4 w-4" />
-                        WhatsApp
-                    </a>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

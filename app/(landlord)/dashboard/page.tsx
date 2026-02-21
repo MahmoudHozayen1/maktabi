@@ -1,9 +1,12 @@
-﻿import Link from 'next/link';
+﻿
+import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { Building2, Plus, Eye, MessageSquare, TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { Building2, Plus, Eye, MessageSquare, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -12,7 +15,7 @@ export default async function DashboardPage() {
         redirect('/login');
     }
 
-    // Fetch user's properties
+    // Fetch ALL user's properties (including PENDING)
     const properties = await prisma.property.findMany({
         where: { ownerId: session.user.id },
         include: {
@@ -25,11 +28,12 @@ export default async function DashboardPage() {
     const totalLeads = properties.reduce((acc, p) => acc + p.leads.length, 0);
     const approvedCount = properties.filter((p) => p.status === 'APPROVED').length;
     const pendingCount = properties.filter((p) => p.status === 'PENDING').length;
+    const rejectedCount = properties.filter((p) => p.status === 'REJECTED').length;
 
     const stats = [
         { label: 'Total Listings', value: properties.length.toString(), icon: Building2, color: 'text-emerald-500' },
-        { label: 'Approved', value: approvedCount.toString(), icon: Eye, color: 'text-blue-500' },
-        { label: 'Pending', value: pendingCount.toString(), icon: TrendingUp, color: 'text-yellow-500' },
+        { label: 'Approved', value: approvedCount.toString(), icon: CheckCircle, color: 'text-green-500' },
+        { label: 'Pending', value: pendingCount.toString(), icon: Clock, color: 'text-yellow-500' },
         { label: 'Total Inquiries', value: totalLeads.toString(), icon: MessageSquare, color: 'text-purple-500' },
     ];
 
@@ -43,6 +47,19 @@ export default async function DashboardPage() {
                 return 'bg-red-100 text-red-700';
             default:
                 return 'bg-gray-100 text-gray-700';
+        }
+    };
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'APPROVED':
+                return <CheckCircle className="h-4 w-4" />;
+            case 'PENDING':
+                return <Clock className="h-4 w-4" />;
+            case 'REJECTED':
+                return <XCircle className="h-4 w-4" />;
+            default:
+                return null;
         }
     };
 
@@ -119,7 +136,8 @@ export default async function DashboardPage() {
                                             {property.price.toLocaleString()} EGP
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusBadge(property.status)}`}>
+                                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getStatusBadge(property.status)}`}>
+                                                {getStatusIcon(property.status)}
                                                 {property.status}
                                             </span>
                                         </td>
@@ -128,13 +146,21 @@ export default async function DashboardPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    href={`/${property.type === 'OFFICE' ? 'offices' : 'coworking'}/${property.id}`}
-                                                    className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                                                    title="View"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
+                                                {property.status === 'APPROVED' && (
+                                                    <Link
+                                                        href={`/${property.type === 'OFFICE' ? 'offices' : 'coworking'}/${property.id}`}
+                                                        className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                                        title="View"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                )}
+                                                {property.status === 'PENDING' && (
+                                                    <span className="text-xs text-yellow-600">Under review</span>
+                                                )}
+                                                {property.status === 'REJECTED' && (
+                                                    <span className="text-xs text-red-600">Contact support</span>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

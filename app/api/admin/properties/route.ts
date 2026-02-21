@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
         const type = searchParams.get('type');
         const search = searchParams.get('search');
 
-        const where: Record<string, unknown> = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
 
         if (status) where.status = status;
         if (type) where.type = type;
@@ -52,6 +53,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ properties });
     } catch (error) {
         console.error('Error fetching properties:', error);
-        return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });
+        return NextResponse.json({ properties: [], error: 'Failed to fetch properties' }, { status: 500 });
     }
 }
