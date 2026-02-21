@@ -1,8 +1,28 @@
 ﻿import Link from 'next/link';
 import { Building2, Users, Rocket, MapPin, ArrowRight, Star, Shield, Clock } from 'lucide-react';
+import prisma from '@/lib/prisma';
 import PropertyCard from '@/components/PropertyCard';
 
-export default function HomePage() {
+export default async function HomePage() {
+    // Fetch featured properties
+    const featuredProperties = await prisma.property.findMany({
+        where: {
+            status: 'APPROVED',
+            featured: true,
+        },
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+    });
+
+    // If no featured, get latest
+    const properties = featuredProperties.length > 0
+        ? featuredProperties
+        : await prisma.property.findMany({
+            where: { status: 'APPROVED' },
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+        });
+
     const features = [
         {
             icon: Building2,
@@ -38,12 +58,10 @@ export default function HomePage() {
         <div className="relative">
             {/* Hero Section */}
             <section className="relative overflow-hidden px-6 pb-20 pt-16">
-                {/* Subtle background gradient */}
                 <div className="absolute inset-0 -z-10 bg-gradient-to-b from-gray-50 to-white" />
 
                 <div className="mx-auto max-w-7xl">
                     <div className="mx-auto max-w-4xl text-center">
-                        {/* Badge */}
                         <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
                             <span className="relative flex h-2 w-2">
                                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
@@ -52,19 +70,16 @@ export default function HomePage() {
                             Egypt&apos;s #1 Commercial Real Estate Platform
                         </div>
 
-                        {/* Headline */}
                         <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight text-gray-900 md:text-6xl lg:text-7xl">
                             Find Your Perfect
                             <span className="gradient-text"> Workspace</span>
                         </h1>
 
-                        {/* Subheadline */}
                         <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 md:text-xl">
                             Discover premium offices, coworking spaces, and investment opportunities
                             in Egypt&apos;s top business districts.
                         </p>
 
-                        {/* CTA Buttons */}
                         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                             <Link
                                 href="/offices"
@@ -82,7 +97,6 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    {/* Stats */}
                     <div className="mx-auto mt-20 grid max-w-4xl grid-cols-2 gap-8 md:grid-cols-4">
                         {stats.map((stat) => (
                             <div key={stat.label} className="text-center">
@@ -132,7 +146,7 @@ export default function HomePage() {
                     <div className="mb-12 flex items-end justify-between">
                         <div>
                             <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
-                                Featured <span className="text-emerald-600">Offices</span>
+                                Featured <span className="text-emerald-600">Properties</span>
                             </h2>
                             <p className="text-gray-600">
                                 Hand-picked properties in prime locations
@@ -147,18 +161,25 @@ export default function HomePage() {
                         </Link>
                     </div>
 
-                    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                        {[1, 2, 3].map((i) => (
-                            <PropertyCard key={i} />
-                        ))}
-                    </div>
+                    {properties.length > 0 ? (
+                        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                            {properties.map((property) => (
+                                <PropertyCard key={property.id} property={property} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 py-16 text-center">
+                            <Building2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                            <p className="text-gray-500">No properties available yet.</p>
+                        </div>
+                    )}
 
                     <div className="mt-8 text-center md:hidden">
                         <Link
                             href="/offices"
                             className="inline-flex items-center gap-2 font-medium text-emerald-600"
                         >
-                            View All Offices
+                            View All Properties
                             <ArrowRight className="h-4 w-4" />
                         </Link>
                     </div>
@@ -215,7 +236,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* CTA Section - Premium Black */}
+            {/* CTA Section */}
             <section className="bg-premium-black px-6 py-24">
                 <div className="mx-auto max-w-4xl text-center">
                     <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">

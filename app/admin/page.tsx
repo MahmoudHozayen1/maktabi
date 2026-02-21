@@ -1,431 +1,192 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { Users, Plus, Pencil, Trash2, Shield, Crown, X } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import Link from 'next/link';
+import { Building2, Users, Rocket, MessageSquare, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    createdAt: string;
+interface Stats {
+    totalUsers: number;
+    totalProperties: number;
+    pendingProperties: number;
+    approvedProperties: number;
+    totalStartups: number;
+    pendingStartups: number;
+    totalLeads: number;
+    recentLeads: number;
 }
 
-const ROLES = [
-    { value: 'VISITOR', label: 'Visitor' },
-    { value: 'RENTER', label: 'Renter' },
-    { value: 'INVESTOR', label: 'Investor' },
-    { value: 'LANDLORD_MARKETING', label: 'Landlord (Marketing)' },
-    { value: 'LANDLORD_MANAGED', label: 'Landlord (Managed)' },
-    { value: 'ADMIN', label: 'Admin' },
-];
-
-// Only OWNER can see this option
-const OWNER_ROLE = { value: 'OWNER', label: 'Owner (Head Boss)' };
-
-export default function UsersPage() {
-    const { data: session } = useSession();
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        role: 'RENTER',
+export default function AdminDashboard() {
+    const [stats, setStats] = useState<Stats>({
+        totalUsers: 0,
+        totalProperties: 0,
+        pendingProperties: 0,
+        approvedProperties: 0,
+        totalStartups: 0,
+        pendingStartups: 0,
+        totalLeads: 0,
+        recentLeads: 0,
     });
-    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
-    const isOwner = session?.user?.role === 'OWNER';
-    const availableRoles = isOwner ? [...ROLES, OWNER_ROLE] : ROLES;
+    useEffect(() => {
+        fetchStats();
+    }, []);
 
-    // Fetch users
-    const fetchUsers = async () => {
+    const fetchStats = async () => {
         try {
-            const res = await fetch('/api/admin/users');
+            const res = await fetch('/api/admin/stats');
             const data = await res.json();
-            setUsers(data.users || []);
-        } catch (err) {
-            console.error('Failed to fetch users:', err);
+            if (data.stats) {
+                setStats(data.stats);
+            }
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    const statCards = [
+        {
+            title: 'Total Users',
+            value: stats.totalUsers,
+            icon: Users,
+            color: 'text-blue-500',
+            bgColor: 'bg-blue-500/10',
+            href: '/admin/users',
+        },
+        {
+            title: 'Properties',
+            value: stats.totalProperties,
+            icon: Building2,
+            color: 'text-emerald-500',
+            bgColor: 'bg-emerald-500/10',
+            href: '/admin/properties',
+            subtext: `${stats.pendingProperties} pending`,
+        },
+        {
+            title: 'Startups',
+            value: stats.totalStartups,
+            icon: Rocket,
+            color: 'text-purple-500',
+            bgColor: 'bg-purple-500/10',
+            href: '/admin/startups',
+            subtext: `${stats.pendingStartups} pending`,
+        },
+        {
+            title: 'Total Leads',
+            value: stats.totalLeads,
+            icon: MessageSquare,
+            color: 'text-orange-500',
+            bgColor: 'bg-orange-500/10',
+            href: '/admin/leads',
+            subtext: `${stats.recentLeads} this week`,
+        },
+    ];
 
-    // Open modal for new user
-    const handleAddUser = () => {
-        setEditingUser(null);
-        setFormData({ name: '', email: '', password: '', role: 'RENTER' });
-        setError('');
-        setShowModal(true);
-    };
-
-    // Open modal for editing
-    const handleEditUser = (user: User) => {
-        // Cannot edit OWNER unless you are OWNER
-        if (user.role === 'OWNER' && !isOwner) {
-            alert('Only the Owner can edit the Owner account');
-            return;
-        }
-        setEditingUser(user);
-        setFormData({
-            name: user.name,
-            email: user.email,
-            password: '',
-            role: user.role,
-        });
-        setError('');
-        setShowModal(true);
-    };
-
-    // Submit form
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            const url = editingUser
-                ? `/api/admin/users/${editingUser.id}`
-                : '/api/admin/users';
-            const method = editingUser ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.error || 'Something went wrong');
-                return;
-            }
-
-            setShowModal(false);
-            fetchUsers();
-        } catch (err) {
-            setError('Failed to save user');
-        }
-    };
-
-    // Delete user
-    const handleDeleteUser = async (user: User) => {
-        if (user.role === 'OWNER') {
-            alert('Cannot delete the Owner account');
-            return;
-        }
-
-        if (!confirm('Are you sure you want to delete this user?')) return;
-
-        try {
-            const res = await fetch(`/api/admin/users/${user.id}`, {
-                method: 'DELETE',
-            });
-
-            if (res.ok) {
-                fetchUsers();
-            } else {
-                const data = await res.json();
-                alert(data.error || 'Failed to delete user');
-            }
-        } catch (err) {
-            alert('Failed to delete user');
-        }
-    };
-
-    // Make user admin quickly
-    const handleMakeAdmin = async (user: User) => {
-        if (!confirm(`Make ${user.name} an admin?`)) return;
-
-        try {
-            const res = await fetch(`/api/admin/users/${user.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...user, role: 'ADMIN' }),
-            });
-
-            if (res.ok) {
-                fetchUsers();
-            }
-        } catch (err) {
-            alert('Failed to update user');
-        }
-    };
-
-    const getRoleBadgeStyle = (role: string) => {
-        switch (role) {
-            case 'OWNER':
-                return 'bg-yellow-500/10 text-yellow-500';
-            case 'ADMIN':
-                return 'bg-emerald-500/10 text-emerald-500';
-            case 'RENTER':
-                return 'bg-blue-500/10 text-blue-500';
-            default:
-                return 'bg-gray-500/10 text-gray-400';
-        }
-    };
+    const quickActions = [
+        { label: 'Review Pending Properties', href: '/admin/properties?status=PENDING', icon: Clock },
+        { label: 'Review Pending Startups', href: '/admin/startups?status=PENDING', icon: Rocket },
+        { label: 'View Recent Leads', href: '/admin/leads', icon: MessageSquare },
+        { label: 'Manage Users', href: '/admin/users', icon: Users },
+    ];
 
     return (
         <div>
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Users</h1>
-                    <p className="mt-1 text-gray-400">
-                        Manage users and admin access
-                    </p>
-                </div>
-                <Button onClick={handleAddUser}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add User
-                </Button>
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold">Dashboard</h1>
+                <p className="mt-1 text-gray-400">Welcome to the admin panel</p>
             </div>
 
-            {/* Stats */}
-            <div className="mb-8 grid gap-4 sm:grid-cols-4">
-                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold">{users.length}</div>
-                    <div className="text-sm text-gray-400">Total Users</div>
-                </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold text-yellow-500">
-                        {users.filter((u) => u.role === 'OWNER').length}
-                    </div>
-                    <div className="text-sm text-gray-400">Owners</div>
-                </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold text-emerald-500">
-                        {users.filter((u) => u.role === 'ADMIN').length}
-                    </div>
-                    <div className="text-sm text-gray-400">Admins</div>
-                </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold text-blue-500">
-                        {users.filter((u) => u.role === 'RENTER').length}
-                    </div>
-                    <div className="text-sm text-gray-400">Renters</div>
-                </div>
-            </div>
-
-            {/* Users Table */}
-            <div className="rounded-xl border border-gray-800 bg-gray-900">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-gray-800 text-left text-sm text-gray-400">
-                                <th className="px-6 py-4">User</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Joined</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                                        Loading...
-                                    </td>
-                                </tr>
-                            ) : users.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                                        No users found
-                                    </td>
-                                </tr>
-                            ) : (
-                                users.map((user) => (
-                                    <tr key={user.id} className="border-b border-gray-800">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                {user.role === 'OWNER' && (
-                                                    <Crown className="h-5 w-5 text-yellow-500" />
-                                                )}
-                                                <div>
-                                                    <div className="font-medium">{user.name}</div>
-                                                    <div className="text-sm text-gray-400">{user.email}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeStyle(user.role)}`}
-                                            >
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-400">
-                                            {new Date(user.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {/* Only show actions if not OWNER or if current user is OWNER */}
-                                                {user.role !== 'OWNER' && (
-                                                    <>
-                                                        {user.role !== 'ADMIN' && (
-                                                            <button
-                                                                onClick={() => handleMakeAdmin(user)}
-                                                                className="rounded-lg p-2 text-gray-400 hover:bg-emerald-500/10 hover:text-emerald-500"
-                                                                title="Make Admin"
-                                                            >
-                                                                <Shield className="h-4 w-4" />
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleEditUser(user)}
-                                                            className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white"
-                                                            title="Edit"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteUser(user)}
-                                                            className="rounded-lg p-2 text-gray-400 hover:bg-red-500/10 hover:text-red-500"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {user.role === 'OWNER' && isOwner && session?.user?.id === user.id && (
-                                                    <button
-                                                        onClick={() => handleEditUser(user)}
-                                                        className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white"
-                                                        title="Edit"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </button>
-                                                )}
-                                                {user.role === 'OWNER' && !isOwner && (
-                                                    <span className="text-xs text-gray-500">Protected</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6">
-                        <div className="mb-6 flex items-center justify-between">
-                            <h2 className="text-xl font-bold">
-                                {editingUser ? 'Edit User' : 'Add New User'}
-                            </h2>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {error && (
-                            <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
-                                {error}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Stats Grid */}
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {statCards.map((card) => (
+                    <Link
+                        key={card.title}
+                        href={card.href}
+                        className="rounded-xl border border-gray-800 bg-gray-900 p-6 transition-all hover:border-gray-700"
+                    >
+                        <div className="flex items-center justify-between">
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, name: e.target.value })
-                                    }
-                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-emerald-500 focus:outline-none"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, email: e.target.value })
-                                    }
-                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-emerald-500 focus:outline-none"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">
-                                    Password {editingUser && '(leave blank to keep current)'}
-                                </label>
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, password: e.target.value })
-                                    }
-                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-emerald-500 focus:outline-none"
-                                    {...(!editingUser && { required: true })}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">
-                                    Role
-                                </label>
-                                <select
-                                    value={formData.role}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, role: e.target.value })
-                                    }
-                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-emerald-500 focus:outline-none"
-                                    disabled={editingUser?.role === 'OWNER'}
-                                >
-                                    {availableRoles.map((role) => (
-                                        <option key={role.value} value={role.value}>
-                                            {role.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                {editingUser?.role === 'OWNER' && (
-                                    <p className="mt-1 text-xs text-yellow-500">
-                                        Owner role cannot be changed
-                                    </p>
+                                <p className="text-sm text-gray-400">{card.title}</p>
+                                <p className="mt-1 text-3xl font-bold">
+                                    {loading ? '-' : card.value}
+                                </p>
+                                {card.subtext && (
+                                    <p className="mt-1 text-xs text-gray-500">{card.subtext}</p>
                                 )}
                             </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={() => setShowModal(false)}
-                                    className="flex-1"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" className="flex-1">
-                                    {editingUser ? 'Update' : 'Create'}
-                                </Button>
+                            <div className={`rounded-lg p-3 ${card.bgColor}`}>
+                                <card.icon className={`h-6 w-6 ${card.color}`} />
                             </div>
-                        </form>
+                        </div>
+                    </Link>
+                ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mb-8">
+                <h2 className="mb-4 text-xl font-bold">Quick Actions</h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {quickActions.map((action) => (
+                        <Link
+                            key={action.label}
+                            href={action.href}
+                            className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 transition-all hover:border-emerald-500/50 hover:bg-gray-800"
+                        >
+                            <action.icon className="h-5 w-5 text-emerald-500" />
+                            <span className="text-sm font-medium">{action.label}</span>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
+            {/* Pending Reviews */}
+            <div className="grid gap-6 lg:grid-cols-2">
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="font-bold">Pending Properties</h3>
+                        <Link href="/admin/properties?status=PENDING" className="text-sm text-emerald-500 hover:underline">
+                            View All
+                        </Link>
+                    </div>
+                    <div className="flex items-center justify-center py-8 text-gray-500">
+                        {stats.pendingProperties > 0 ? (
+                            <div className="text-center">
+                                <div className="text-4xl font-bold text-yellow-500">{stats.pendingProperties}</div>
+                                <p className="mt-2">properties awaiting review</p>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-5 w-5 text-emerald-500" />
+                                <span>All caught up!</span>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
+
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="font-bold">Pending Startups</h3>
+                        <Link href="/admin/startups?status=PENDING" className="text-sm text-emerald-500 hover:underline">
+                            View All
+                        </Link>
+                    </div>
+                    <div className="flex items-center justify-center py-8 text-gray-500">
+                        {stats.pendingStartups > 0 ? (
+                            <div className="text-center">
+                                <div className="text-4xl font-bold text-yellow-500">{stats.pendingStartups}</div>
+                                <p className="mt-2">startups awaiting review</p>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-5 w-5 text-emerald-500" />
+                                <span>All caught up!</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

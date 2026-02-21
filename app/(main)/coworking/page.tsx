@@ -1,24 +1,44 @@
-﻿import PropertyCard from "@/components/PropertyCard";
+﻿import prisma from '@/lib/prisma';
+import PropertyCard from '@/components/PropertyCard';
+import { Users } from 'lucide-react';
 
-export default function CoworkingPage() {
-    const spaces = [1, 2, 3, 4, 5, 6];
+export default async function CoworkingPage() {
+    const properties = await prisma.property.findMany({
+        where: {
+            type: 'COWORKING',
+            status: 'APPROVED',
+        },
+        orderBy: { createdAt: 'desc' },
+    });
 
     return (
-        <div className="mx-auto max-w-7xl px-6 py-16">
-            <div className="mb-12">
-                <h1 className="text-4xl font-bold">
-                    Coworking <span className="text-emerald-500">Spaces</span>
-                </h1>
-                <p className="mt-4 text-gray-400">
-                    Flexible workspaces for freelancers, startups, and remote teams.
-                </p>
-            </div>
+        <main className="min-h-screen bg-white px-6 py-12">
+            <div className="mx-auto max-w-7xl">
+                {/* Header */}
+                <div className="mb-12">
+                    <h1 className="text-4xl font-bold text-gray-900">
+                        Coworking <span className="text-emerald-500">Spaces</span>
+                    </h1>
+                    <p className="mt-4 text-gray-600">
+                        Flexible workspaces for freelancers, startups, and remote teams.
+                    </p>
+                </div>
 
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {spaces.map((item) => (
-                    <PropertyCard key={item} />
-                ))}
+                {/* Grid of Listings */}
+                {properties.length > 0 ? (
+                    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                        {properties.map((property) => (
+                            <PropertyCard key={property.id} property={property} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <Users className="mb-4 h-16 w-16 text-gray-300" />
+                        <h2 className="mb-2 text-xl font-bold text-gray-700">No coworking spaces available</h2>
+                        <p className="text-gray-500">Check back later for new listings.</p>
+                    </div>
+                )}
             </div>
-        </div>
+        </main>
     );
 }
