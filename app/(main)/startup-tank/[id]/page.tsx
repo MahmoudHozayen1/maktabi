@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Rocket, Users, TrendingUp, Globe, Mail, Phone } from 'lucide-react';
 import prisma from '@/lib/prisma';
 
-// Revalidate every 60 seconds
 export const revalidate = 60;
 
 export default async function StartupDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,9 +25,8 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
         notFound();
     }
 
-    // WhatsApp message for investment inquiry
     const whatsappMessage = encodeURIComponent(
-        `Hello, I am interested in investing in ${startup.name}. I would like to learn more about this opportunity.`
+        `Hello, I am interested in investing in startup #${startup.serialNumber} - ${startup.name}. I would like to learn more about this opportunity.`
     );
     const whatsappNumber = startup.founder.phone?.replace('+', '') || '201554515541';
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
@@ -51,6 +49,10 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
                         <Rocket className="h-8 w-8 text-emerald-600" />
                     </div>
                     <div>
+                        {/* Serial Number Badge */}
+                        <span className="mb-1 inline-flex rounded-full bg-purple-100 px-3 py-1 text-sm font-bold text-purple-700">
+                            Startup #{startup.serialNumber}
+                        </span>
                         <h1 className="text-3xl font-bold text-gray-900">{startup.name}</h1>
                         <div className="mt-1 flex items-center gap-3 text-sm text-gray-500">
                             <span className="text-emerald-600">{startup.sector}</span>
@@ -83,7 +85,7 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
                         Contact via WhatsApp
                     </a>
                     <a
-                        href={`mailto:${startup.founder.email}?subject=Investment Inquiry: ${startup.name}`}
+                        href={`mailto:${startup.founder.email}?subject=Investment Inquiry: Startup %23${startup.serialNumber} - ${startup.name}`}
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white py-3 font-medium text-gray-700 hover:bg-gray-50"
                     >
                         <Mail className="h-5 w-5" />

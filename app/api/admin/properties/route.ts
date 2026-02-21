@@ -16,10 +16,25 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
         const type = searchParams.get('type');
+        const search = searchParams.get('search');
 
         const where: Record<string, unknown> = {};
+
         if (status) where.status = status;
         if (type) where.type = type;
+
+        // Search by serial number or title
+        if (search) {
+            const serialNumber = parseInt(search);
+            if (!isNaN(serialNumber)) {
+                where.serialNumber = serialNumber;
+            } else {
+                where.title = {
+                    contains: search,
+                    mode: 'insensitive',
+                };
+            }
+        }
 
         const properties = await prisma.property.findMany({
             where,

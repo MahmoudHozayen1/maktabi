@@ -1,4 +1,5 @@
-﻿import fs from 'fs';
+﻿
+import fs from 'fs';
 
 const schema = `generator client {
   provider = "prisma-client-js"
@@ -148,6 +149,7 @@ model Lead {
 
 model Startup {
   id            String         @id @default(cuid())
+  serialNumber  Int            @unique @default(autoincrement())
   name          String
   description   String
   pitchDeckUrl  String?
