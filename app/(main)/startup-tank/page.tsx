@@ -2,6 +2,9 @@
 import { Rocket, TrendingUp, Users, DollarSign } from 'lucide-react';
 import prisma from '@/lib/prisma';
 
+// Revalidate this page every 60 seconds, or on-demand
+export const revalidate = 60;
+
 export default async function StartupTankPage() {
     const startups = await prisma.startup.findMany({
         where: { status: 'APPROVED' },

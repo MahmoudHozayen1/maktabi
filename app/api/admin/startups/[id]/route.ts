@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidatePath } from 'next/cache';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
@@ -24,6 +25,10 @@ export async function PUT(
             data: body,
         });
 
+        // Revalidate the startup pages so changes show immediately
+        revalidatePath('/startup-tank');
+        revalidatePath(`/startup-tank/${id}`);
+
         return NextResponse.json({ startup });
     } catch (error) {
         console.error('Error updating startup:', error);
@@ -46,6 +51,9 @@ export async function DELETE(
         await prisma.startup.delete({
             where: { id },
         });
+
+        // Revalidate the startup pages
+        revalidatePath('/startup-tank');
 
         return NextResponse.json({ message: 'Startup deleted' });
     } catch (error) {

@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidatePath } from 'next/cache';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
@@ -24,6 +25,13 @@ export async function PUT(
             data: body,
         });
 
+        // Revalidate pages so changes show immediately
+        revalidatePath('/offices');
+        revalidatePath('/coworking');
+        revalidatePath(`/offices/${id}`);
+        revalidatePath(`/coworking/${id}`);
+        revalidatePath('/');
+
         return NextResponse.json({ property });
     } catch (error) {
         console.error('Error updating property:', error);
@@ -46,6 +54,11 @@ export async function DELETE(
         await prisma.property.delete({
             where: { id },
         });
+
+        // Revalidate pages
+        revalidatePath('/offices');
+        revalidatePath('/coworking');
+        revalidatePath('/');
 
         return NextResponse.json({ message: 'Property deleted' });
     } catch (error) {
