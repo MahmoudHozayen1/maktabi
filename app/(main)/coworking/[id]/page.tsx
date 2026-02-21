@@ -5,6 +5,9 @@ import { MapPin, Users, Clock, Wifi, Coffee, Monitor } from 'lucide-react';
 import prisma from '@/lib/prisma';
 import Button from '@/components/ui/Button';
 import TrackLeadButton from '@/components/TrackLeadButton';
+import PropertyMap from '@/components/PropertyMap';
+
+export const revalidate = 60;
 
 export default async function CoworkingDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -101,7 +104,7 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                     </div>
 
                     {property.amenities && property.amenities.length > 0 && (
-                        <div>
+                        <div className="mb-8">
                             <h2 className="mb-4 text-xl font-bold text-gray-900">Amenities</h2>
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                                 {property.amenities.map((amenity) => {
@@ -127,6 +130,18 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                                     );
                                 })}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Map Section */}
+                    {property.lat && property.lng && (
+                        <div className="mb-8">
+                            <h2 className="mb-4 text-xl font-bold text-gray-900">Location</h2>
+                            <PropertyMap
+                                lat={property.lat}
+                                lng={property.lng}
+                                title={property.title}
+                            />
                         </div>
                     )}
                 </div>
