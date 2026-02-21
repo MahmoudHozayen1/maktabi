@@ -1,4 +1,5 @@
-﻿'use client';
+﻿landlord) /list-property/page.tsx
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 
 const propertySchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -36,6 +36,31 @@ const AMENITIES = [
     { value: 'furnished', label: 'Furnished' },
 ];
 
+// Default coordinates for cities (center of each city)
+const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
+    'Cairo': { lat: 30.0444, lng: 31.2357 },
+    'Giza': { lat: 30.0131, lng: 31.2089 },
+    'New Cairo': { lat: 30.0074, lng: 31.4913 },
+    '6th October': { lat: 29.9285, lng: 30.9188 },
+    'Alexandria': { lat: 31.2001, lng: 29.9187 },
+};
+
+// District-specific coordinates for more accuracy
+const DISTRICT_COORDINATES: Record<string, { lat: number; lng: number }> = {
+    'maadi': { lat: 29.9602, lng: 31.2569 },
+    'zamalek': { lat: 30.0609, lng: 31.2193 },
+    'downtown': { lat: 30.0444, lng: 31.2357 },
+    'heliopolis': { lat: 30.0911, lng: 31.3225 },
+    'nasr city': { lat: 30.0511, lng: 31.3656 },
+    'dokki': { lat: 30.0385, lng: 31.2012 },
+    'mohandessin': { lat: 30.0561, lng: 31.2001 },
+    'fifth settlement': { lat: 30.0074, lng: 31.4913 },
+    'new cairo': { lat: 30.0074, lng: 31.4913 },
+    'sheikh zayed': { lat: 30.0394, lng: 30.9806 },
+    'tagamoa': { lat: 30.0074, lng: 31.4913 },
+    'rehab': { lat: 30.0580, lng: 31.4900 },
+};
+
 export default function ListPropertyPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
@@ -54,7 +79,6 @@ export default function ListPropertyPage() {
         },
     });
 
-    // Redirect if not logged in
     if (status === 'loading') {
         return (
             <div className="flex min-h-screen items-center justify-center bg-white">
@@ -79,9 +103,37 @@ export default function ListPropertyPage() {
         );
     };
 
+    const getCoordinates = (city: string, district: string) => {
+        // Try to get district-specific coordinates first
+        const districtLower = district.toLowerCase().trim();
+        if (DISTRICT_COORDINATES[districtLower]) {
+            // Add small random offset to avoid stacking markers
+            const offset = () => (Math.random() - 0.5) * 0.01;
+            return {
+                lat: DISTRICT_COORDINATES[districtLower].lat + offset(),
+                lng: DISTRICT_COORDINATES[districtLower].lng + offset(),
+            };
+        }
+
+        // Fall back to city coordinates
+        if (CITY_COORDINATES[city]) {
+            const offset = () => (Math.random() - 0.5) * 0.02;
+            return {
+                lat: CITY_COORDINATES[city].lat + offset(),
+                lng: CITY_COORDINATES[city].lng + offset(),
+            };
+        }
+
+        // Default to Cairo center
+        return { lat: 30.0444, lng: 31.2357 };
+    };
+
     const onSubmit = async (data: PropertyInput) => {
         setIsLoading(true);
         setError('');
+
+        // Get coordinates based on city and district
+        const coordinates = getCoordinates(data.city, data.district);
 
         try {
             const res = await fetch('/api/properties', {
@@ -99,6 +151,8 @@ export default function ListPropertyPage() {
                     address: data.address,
                     amenities: selectedAmenities,
                     images: [],
+                    lat: coordinates.lat,
+                    lng: coordinates.lng,
                 }),
             });
 
@@ -308,7 +362,7 @@ export default function ListPropertyPage() {
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="Maadi"
+                                        placeholder="Maadi, Zamalek, Dokki..."
                                         className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                         {...register('district')}
                                     />

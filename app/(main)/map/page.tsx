@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { MapPin } from 'lucide-react';
 import MapFilters from './MapFilters';
 import PropertyList from './PropertyList';
 
-// Dynamic import for Leaflet (no SSR)
 const MapView = dynamic(() => import('./MapView'), {
     ssr: false,
     loading: () => (
@@ -59,6 +59,7 @@ export default function MapPage() {
         try {
             const res = await fetch('/api/properties');
             const data = await res.json();
+            console.log('Fetched properties:', data.properties); // Debug log
             setProperties(data.properties || []);
         } catch (error) {
             console.error('Failed to fetch properties:', error);
@@ -67,7 +68,7 @@ export default function MapPage() {
         }
     };
 
-    // Transform properties for map display (filter those with lat/lng and convert types)
+    // Transform properties for map display
     const mapProperties: MapProperty[] = properties
         .filter((p): p is ApiProperty & { lat: number; lng: number } =>
             p.lat !== null && p.lng !== null
@@ -82,7 +83,7 @@ export default function MapPage() {
             lat: p.lat,
             lng: p.lng,
             size: p.size,
-            rooms: p.rooms ?? undefined, // Convert null to undefined
+            rooms: p.rooms ?? undefined,
         }));
 
     const filteredCount = mapProperties.filter((p) => {
@@ -124,38 +125,54 @@ export default function MapPage() {
                     propertyCount={filteredCount}
                 />
 
-                {/* Map + List Layout */}
-                <div className="grid gap-6 lg:grid-cols-3">
-                    {/* Map */}
-                    <div className="lg:col-span-2">
-                        <MapView
-                            properties={mapProperties}
-                            selectedType={selectedType}
-                            selectedCity={selectedCity}
-                        />
+                {/* Show message if no properties or no properties with coordinates */}
+                {properties.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <MapPin className="mb-4 h-16 w-16 text-gray-300" />
+                        <h2 className="mb-2 text-xl font-bold text-gray-700">No properties available</h2>
+                        <p className="text-gray-500">Check back later for new listings.</p>
                     </div>
+                ) : mapProperties.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <MapPin className="mb-4 h-16 w-16 text-gray-300" />
+                        <h2 className="mb-2 text-xl font-bold text-gray-700">No properties with map locations</h2>
+                        <p className="text-gray-500">
+                            {properties.length} properties available, but none have map coordinates yet.
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Map + List Layout */}
+                        <div className="grid gap-6 lg:grid-cols-3">
+                            <div className="lg:col-span-2">
+                                <MapView
+                                    properties={mapProperties}
+                                    selectedType={selectedType}
+                                    selectedCity={selectedCity}
+                                />
+                            </div>
+                            <div className="lg:col-span-1">
+                                <PropertyList
+                                    properties={mapProperties}
+                                    selectedType={selectedType}
+                                    selectedCity={selectedCity}
+                                />
+                            </div>
+                        </div>
 
-                    {/* Property List */}
-                    <div className="lg:col-span-1">
-                        <PropertyList
-                            properties={mapProperties}
-                            selectedType={selectedType}
-                            selectedCity={selectedCity}
-                        />
-                    </div>
-                </div>
-
-                {/* Legend */}
-                <div className="mt-6 flex items-center gap-6 text-sm text-gray-500">
-                    <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 rounded-full bg-blue-500"></div>
-                        <span>Offices</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 rounded-full bg-emerald-500"></div>
-                        <span>Coworking Spaces</span>
-                    </div>
-                </div>
+                        {/* Legend */}
+                        <div className="mt-6 flex items-center gap-6 text-sm text-gray-500">
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-4 rounded-full bg-blue-500"></div>
+                                <span>Offices</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-4 rounded-full bg-emerald-500"></div>
+                                <span>Coworking Spaces</span>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
