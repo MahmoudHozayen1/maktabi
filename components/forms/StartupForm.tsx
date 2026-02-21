@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,30 +20,77 @@ const startupSchema = z.object({
 type StartupInput = z.infer<typeof startupSchema>;
 
 export default function StartupForm() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
 
     const {
         register,
         handleSubmit,
         formState: { errors },
+        reset,
     } = useForm<StartupInput>({
         resolver: zodResolver(startupSchema),
     });
 
     const onSubmit = async (data: StartupInput) => {
         setIsLoading(true);
+        setError('');
+
         try {
-            // TODO: Submit to API
-            console.log(data);
-        } catch (error) {
-            console.error(error);
+            const response = await fetch('/api/startups', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                setError(result.error || 'Failed to submit startup');
+                return;
+            }
+
+            setSuccess(true);
+            reset();
+
+            // Redirect after success
+            setTimeout(() => {
+                router.push('/startup-tank');
+            }, 2000);
+        } catch (err) {
+            setError('Something went wrong. Please try again.');
+            console.error(err);
         } finally {
             setIsLoading(false);
         }
     };
 
+    if (success) {
+        return (
+            <div className="rounded-xl bg-emerald-500/10 p-8 text-center">
+                <div className="mb-4 text-4xl">🎉</div>
+                <h3 className="mb-2 text-xl font-bold text-emerald-500">
+                    Startup Submitted!
+                </h3>
+                <p className="text-gray-400">
+                    Your startup has been submitted for review. Redirecting...
+                </p>
+            </div>
+        );
+    }
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {error && (
+                <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-500">
+                    {error}
+                </div>
+            )}
+
             <Input
                 label="Startup Name"
                 placeholder="Your startup name"
@@ -101,7 +149,7 @@ export default function StartupForm() {
                 </label>
                 <textarea
                     rows={4}
-                    placeholder="Describe your startup..."
+                    placeholder="Describe your startup (at least 50 characters)..."
                     className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                     {...register('description')}
                 />
