@@ -84,6 +84,7 @@ model VerificationToken {
 
 model Property {
   id            String         @id @default(cuid())
+  serialNumber  Int            @unique @default(autoincrement())
   title         String
   titleAr       String?
   description   String
@@ -135,6 +136,7 @@ model Favorite {
 model Lead {
   id        String   @id @default(cuid())
   source    String   @default("whatsapp")
+  message   String?
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())

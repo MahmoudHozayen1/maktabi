@@ -9,6 +9,7 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
     // TODO: Fetch coworking space data from database using id
     const space = {
         id: id,
+        serialNumber: 2001, // This would come from database
         title: 'Creative Hub Coworking',
         description: 'A vibrant coworking space designed for freelancers, startups, and remote workers. Enjoy a creative atmosphere with all the amenities you need to be productive. Flexible plans available for individuals and teams.',
         city: 'Cairo',
@@ -58,6 +59,13 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                                 <p>Coworking Space Images</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Property Serial Badge */}
+                    <div className="mb-4">
+                        <span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-bold text-emerald-500">
+                            Property #{space.serialNumber}
+                        </span>
                     </div>
 
                     <h1 className="mb-4 text-3xl font-bold">{space.title}</h1>
@@ -144,6 +152,8 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                             {/* Track Lead Button */}
                             <TrackLeadButton
                                 propertyId={space.id}
+                                propertySerial={space.serialNumber}
+                                propertyTitle={space.title}
                                 phoneNumber={space.contact.phone}
                             />
                             <Button variant="secondary" className="w-full">

@@ -9,6 +9,7 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
     // TODO: Fetch office data from database using id
     const office = {
         id: id,
+        serialNumber: 1001, // This would come from database
         title: 'Modern Office Space in Maadi',
         description: 'A beautifully designed modern office space perfect for teams of 5-15 people. Located in the heart of Maadi with easy access to public transportation and amenities. The space features high ceilings, natural lighting, and a professional atmosphere.',
         price: 50000,
@@ -54,6 +55,13 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
                                 <p>Office Images</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Property Serial Badge */}
+                    <div className="mb-4">
+                        <span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-bold text-emerald-500">
+                            Property #{office.serialNumber}
+                        </span>
                     </div>
 
                     <h1 className="mb-4 text-3xl font-bold">{office.title}</h1>
@@ -118,6 +126,8 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
                             {/* Track Lead Button */}
                             <TrackLeadButton
                                 propertyId={office.id}
+                                propertySerial={office.serialNumber}
+                                propertyTitle={office.title}
                                 phoneNumber={office.landlord.phone}
                             />
                             <Button variant="secondary" className="w-full">

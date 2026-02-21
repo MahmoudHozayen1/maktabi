@@ -1,11 +1,12 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { MessageSquare, Building2, Users, Phone, Globe, Calendar } from 'lucide-react';
+import { MessageSquare, Building2, Users, Phone, Globe, Calendar, Search, X } from 'lucide-react';
 
 interface Lead {
     id: string;
     source: string;
+    message: string | null;
     ipAddress: string | null;
     createdAt: string;
     user: {
@@ -15,6 +16,7 @@ interface Lead {
     } | null;
     property: {
         id: string;
+        serialNumber: number;
         title: string;
         type: string;
         city: string;
@@ -25,14 +27,21 @@ interface Lead {
 export default function LeadsPage() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [sourceFilter, setSourceFilter] = useState('');
 
     useEffect(() => {
         fetchLeads();
-    }, []);
+    }, [sourceFilter]);
 
-    const fetchLeads = async () => {
+    const fetchLeads = async (searchTerm?: string) => {
+        setLoading(true);
         try {
-            const res = await fetch('/api/leads');
+            const params = new URLSearchParams();
+            if (searchTerm || search) params.set('search', searchTerm || search);
+            if (sourceFilter) params.set('source', sourceFilter);
+
+            const res = await fetch(`/api/leads?${params.toString()}`);
             const data = await res.json();
             setLeads(data.leads || []);
         } catch (err) {
@@ -40,6 +49,16 @@ export default function LeadsPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        fetchLeads(search);
+    };
+
+    const clearSearch = () => {
+        setSearch('');
+        fetchLeads('');
     };
 
     const getSourceIcon = (source: string) => {
@@ -61,6 +80,47 @@ export default function LeadsPage() {
                 <p className="mt-1 text-gray-400">
                     Track all property inquiries and contact requests
                 </p>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search by property # or title..."
+                            className="w-64 rounded-lg border border-gray-700 bg-gray-800 py-2 pl-10 pr-10 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                        />
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        type="submit"
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                    >
+                        Search
+                    </button>
+                </form>
+
+                <select
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value)}
+                    className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                >
+                    <option value="">All Sources</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="website">Website</option>
+                </select>
             </div>
 
             {/* Stats */}
@@ -95,32 +155,41 @@ export default function LeadsPage() {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-gray-800 text-left text-sm text-gray-400">
+                                <th className="px-6 py-4">Property #</th>
                                 <th className="px-6 py-4">Property</th>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Source</th>
+                                <th className="px-6 py-4">Message</th>
                                 <th className="px-6 py-4">Date</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                         Loading...
                                     </td>
                                 </tr>
                             ) : leads.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                         <MessageSquare className="mx-auto mb-2 h-8 w-8 text-gray-600" />
-                                        <p>No leads yet</p>
-                                        <p className="mt-1 text-sm">
-                                            Leads appear when users contact about properties
-                                        </p>
+                                        <p>No leads found</p>
+                                        {search && (
+                                            <p className="mt-1 text-sm">
+                                                Try a different search term
+                                            </p>
+                                        )}
                                     </td>
                                 </tr>
                             ) : (
                                 leads.map((lead) => (
                                     <tr key={lead.id} className="border-b border-gray-800">
+                                        <td className="px-6 py-4">
+                                            <span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-bold text-emerald-500">
+                                                #{lead.property.serialNumber}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <Building2 className="h-5 w-5 text-gray-500" />
@@ -149,6 +218,11 @@ export default function LeadsPage() {
                                             <div className="flex items-center gap-2">
                                                 {getSourceIcon(lead.source)}
                                                 <span className="capitalize">{lead.source}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="max-w-xs truncate text-sm text-gray-400">
+                                                {lead.message || '-'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

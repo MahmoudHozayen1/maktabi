@@ -10,7 +10,7 @@ function isAdmin(role: string | undefined): boolean {
 }
 
 // GET all leads (admin only)
-export async function GET() {
+export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !isAdmin(session.user?.role)) {
@@ -18,7 +18,37 @@ export async function GET() {
     }
 
     try {
+        // Get search params
+        const { searchParams } = new URL(request.url);
+        const search = searchParams.get('search') || '';
+        const source = searchParams.get('source') || '';
+
+        // Build where clause
+        const where: Record<string, unknown> = {};
+
+        if (source) {
+            where.source = source;
+        }
+
+        // Search by property serial number or title
+        if (search) {
+            const serialNumber = parseInt(search);
+            if (!isNaN(serialNumber)) {
+                where.property = {
+                    serialNumber: serialNumber,
+                };
+            } else {
+                where.property = {
+                    title: {
+                        contains: search,
+                        mode: 'insensitive',
+                    },
+                };
+            }
+        }
+
         const leads = await prisma.lead.findMany({
+            where,
             include: {
                 user: {
                     select: {
@@ -30,6 +60,7 @@ export async function GET() {
                 property: {
                     select: {
                         id: true,
+                        serialNumber: true,
                         title: true,
                         type: true,
                         city: true,
@@ -52,7 +83,7 @@ export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         const body = await request.json();
-        const { propertyId, source = 'whatsapp' } = body;
+        const { propertyId, source = 'whatsapp', message } = body;
 
         if (!propertyId) {
             return NextResponse.json(
@@ -72,6 +103,7 @@ export async function POST(request: NextRequest) {
                 propertyId,
                 userId: session?.user?.id || null,
                 source,
+                message: message || null,
                 ipAddress,
                 userAgent,
             },
