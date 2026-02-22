@@ -1,5 +1,4 @@
-﻿
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,7 +6,9 @@ import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Building2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import ImageUpload from '@/components/ImageUpload';
 
 const propertySchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -18,7 +19,6 @@ const propertySchema = z.object({
     city: z.string().min(1, 'Please select a city'),
     district: z.string().min(1, 'Please enter a district'),
     address: z.string().min(10, 'Please enter full address'),
-    propertyType: z.enum(['OFFICE', 'COWORKING']),
     amenities: z.array(z.string()).optional(),
 });
 
@@ -36,7 +36,6 @@ const AMENITIES = [
     { value: 'furnished', label: 'Furnished' },
 ];
 
-// Default coordinates for cities (center of each city)
 const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
     'Cairo': { lat: 30.0444, lng: 31.2357 },
     'Giza': { lat: 30.0131, lng: 31.2089 },
@@ -45,7 +44,6 @@ const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
     'Alexandria': { lat: 31.2001, lng: 29.9187 },
 };
 
-// District-specific coordinates for more accuracy
 const DISTRICT_COORDINATES: Record<string, { lat: number; lng: number }> = {
     'maadi': { lat: 29.9602, lng: 31.2569 },
     'zamalek': { lat: 30.0609, lng: 31.2193 },
@@ -67,6 +65,7 @@ export default function ListPropertyPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+    const [images, setImages] = useState<string[]>([]);
 
     const {
         register,
@@ -74,9 +73,6 @@ export default function ListPropertyPage() {
         formState: { errors },
     } = useForm<PropertyInput>({
         resolver: zodResolver(propertySchema),
-        defaultValues: {
-            propertyType: 'OFFICE',
-        },
     });
 
     if (status === 'loading') {
@@ -104,10 +100,8 @@ export default function ListPropertyPage() {
     };
 
     const getCoordinates = (city: string, district: string) => {
-        // Try to get district-specific coordinates first
         const districtLower = district.toLowerCase().trim();
         if (DISTRICT_COORDINATES[districtLower]) {
-            // Add small random offset to avoid stacking markers
             const offset = () => (Math.random() - 0.5) * 0.01;
             return {
                 lat: DISTRICT_COORDINATES[districtLower].lat + offset(),
@@ -115,7 +109,6 @@ export default function ListPropertyPage() {
             };
         }
 
-        // Fall back to city coordinates
         if (CITY_COORDINATES[city]) {
             const offset = () => (Math.random() - 0.5) * 0.02;
             return {
@@ -124,7 +117,6 @@ export default function ListPropertyPage() {
             };
         }
 
-        // Default to Cairo center
         return { lat: 30.0444, lng: 31.2357 };
     };
 
@@ -132,7 +124,6 @@ export default function ListPropertyPage() {
         setIsLoading(true);
         setError('');
 
-        // Get coordinates based on city and district
         const coordinates = getCoordinates(data.city, data.district);
 
         try {
@@ -145,12 +136,12 @@ export default function ListPropertyPage() {
                     price: data.price,
                     size: data.size,
                     rooms: data.rooms || null,
-                    type: data.propertyType,
+                    type: 'OFFICE', // Always OFFICE for user submissions
                     city: data.city,
                     district: data.district,
                     address: data.address,
                     amenities: selectedAmenities,
-                    images: [],
+                    images: images,
                     lat: coordinates.lat,
                     lng: coordinates.lng,
                 }),
@@ -176,12 +167,19 @@ export default function ListPropertyPage() {
         <div className="min-h-screen bg-gray-50 py-16">
             <div className="mx-auto max-w-3xl px-6">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        List Your <span className="text-emerald-600">Property</span>
-                    </h1>
-                    <p className="mt-2 text-gray-600">
-                        Fill in the details below to list your office or coworking space
-                    </p>
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100">
+                            <Building2 className="h-6 w-6 text-emerald-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                List Your <span className="text-emerald-600">Office</span>
+                            </h1>
+                            <p className="text-gray-600">
+                                Fill in the details below to list your office space
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {error && (
@@ -198,33 +196,7 @@ export default function ListPropertyPage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-700">
-                                    Property Type
-                                </label>
-                                <div className="flex gap-6">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            value="OFFICE"
-                                            {...register('propertyType')}
-                                            className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
-                                        />
-                                        <span className="text-gray-700">Office</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            value="COWORKING"
-                                            {...register('propertyType')}
-                                            className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
-                                        />
-                                        <span className="text-gray-700">Coworking Space</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                    Property Title
+                                    Office Title
                                 </label>
                                 <input
                                     type="text"
@@ -243,7 +215,7 @@ export default function ListPropertyPage() {
                                 </label>
                                 <textarea
                                     rows={4}
-                                    placeholder="Describe your property in detail..."
+                                    placeholder="Describe your office space in detail..."
                                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     {...register('description')}
                                 />
@@ -252,6 +224,16 @@ export default function ListPropertyPage() {
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Images */}
+                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <h2 className="mb-6 text-lg font-bold text-gray-900">Office Images</h2>
+                        <ImageUpload
+                            images={images}
+                            onImagesChange={setImages}
+                            maxImages={5}
+                        />
                     </div>
 
                     {/* Details */}
@@ -299,9 +281,6 @@ export default function ListPropertyPage() {
                                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     {...register('rooms', { valueAsNumber: true })}
                                 />
-                                {errors.rooms && (
-                                    <p className="mt-1 text-sm text-red-500">{errors.rooms.message}</p>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -391,13 +370,13 @@ export default function ListPropertyPage() {
 
                     {/* Notice */}
                     <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700">
-                        <strong>Note:</strong> Your property will be reviewed by our team before it appears on the site.
+                        <strong>Note:</strong> Your office listing will be reviewed by our team before it appears on the site.
                         This usually takes 24-48 hours.
                     </div>
 
                     {/* Submit Button */}
                     <Button type="submit" isLoading={isLoading} className="w-full">
-                        Submit Listing
+                        Submit Office Listing
                     </Button>
                 </form>
             </div>

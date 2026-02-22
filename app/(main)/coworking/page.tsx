@@ -1,6 +1,9 @@
-﻿import prisma from '@/lib/prisma';
+﻿import Link from 'next/link';
+import prisma from '@/lib/prisma';
 import PropertyCard from '@/components/PropertyCard';
-import { Users } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
+
+export const revalidate = 60;
 
 export default async function CoworkingPage() {
     const properties = await prisma.property.findMany({
@@ -15,13 +18,22 @@ export default async function CoworkingPage() {
         <main className="min-h-screen bg-white px-6 py-12">
             <div className="mx-auto max-w-7xl">
                 {/* Header */}
-                <div className="mb-12">
-                    <h1 className="text-4xl font-bold text-gray-900">
-                        Coworking <span className="text-emerald-500">Spaces</span>
-                    </h1>
-                    <p className="mt-4 text-gray-600">
-                        Flexible workspaces for freelancers, startups, and remote teams.
-                    </p>
+                <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-4xl font-bold text-gray-900">
+                            Coworking <span className="text-emerald-500">Spaces</span>
+                        </h1>
+                        <p className="mt-4 text-gray-600">
+                            Flexible workspaces for freelancers, startups, and remote teams.
+                        </p>
+                    </div>
+                    <Link
+                        href="/coworking/apply"
+                        className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white transition-colors hover:bg-emerald-700"
+                    >
+                        <Plus className="h-5 w-5" />
+                        List Your Space
+                    </Link>
                 </div>
 
                 {/* Grid of Listings */}
@@ -35,7 +47,13 @@ export default async function CoworkingPage() {
                     <div className="flex flex-col items-center justify-center py-24 text-center">
                         <Users className="mb-4 h-16 w-16 text-gray-300" />
                         <h2 className="mb-2 text-xl font-bold text-gray-700">No coworking spaces available</h2>
-                        <p className="text-gray-500">Check back later for new listings.</p>
+                        <p className="mb-6 text-gray-500">Check back later for new listings.</p>
+                        <Link
+                            href="/coworking/apply"
+                            className="rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white hover:bg-emerald-700"
+                        >
+                            Apply to List Your Space
+                        </Link>
                     </div>
                 )}
             </div>

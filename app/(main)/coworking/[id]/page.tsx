@@ -1,6 +1,5 @@
 ﻿import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { getServerSession } from 'next-auth';
 import { MapPin, Users, Clock, Wifi, Coffee, Monitor } from 'lucide-react';
 import { authOptions } from '@/lib/auth';
@@ -11,6 +10,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import StarRating from '@/components/StarRating';
 import RatingInput from '@/components/RatingInput';
 import ReviewsList from '@/components/ReviewsList';
+import ImageGallery from '@/components/ImageGallery';
 
 export const revalidate = 60;
 
@@ -48,17 +48,14 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
         notFound();
     }
 
-    // Calculate average rating
     const avgRating = property.ratings.length > 0
         ? property.ratings.reduce((acc, r) => acc + r.stars, 0) / property.ratings.length
         : 0;
 
-    // Check if user has already rated
     const userRating = session?.user?.id
         ? property.ratings.find((r) => r.userId === session.user.id)
         : null;
 
-    // Check if favorited
     const isFavorited = Array.isArray(property.favorites) && property.favorites.length > 0;
 
     const amenityIcons: Record<string, { icon: typeof Wifi; label: string }> = {
@@ -84,18 +81,12 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
             <div className="grid gap-8 lg:grid-cols-3">
                 <div className="lg:col-span-2">
                     {/* Image Gallery */}
-                    <div className="mb-8 aspect-video overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+                    <div className="mb-8">
                         {property.images && property.images.length > 0 ? (
-                            <Image
-                                src={property.images[0]}
-                                alt={property.title}
-                                width={800}
-                                height={450}
-                                className="h-full w-full object-cover"
-                            />
+                            <ImageGallery images={property.images} title={property.title} />
                         ) : (
-                            <div className="flex h-full items-center justify-center text-gray-400">
-                                <Users className="h-16 w-16" />
+                            <div className="flex aspect-video items-center justify-center rounded-xl border border-gray-200 bg-gray-100">
+                                <Users className="h-16 w-16 text-gray-400" />
                             </div>
                         )}
                     </div>
@@ -167,7 +158,6 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                         </div>
                     )}
 
-                    {/* Map Section */}
                     {property.lat && property.lng && (
                         <div className="mb-8">
                             <h2 className="mb-4 text-xl font-bold text-gray-900">Location</h2>
@@ -179,7 +169,6 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                         </div>
                     )}
 
-                    {/* Reviews Section */}
                     <div className="mb-8">
                         <h2 className="mb-4 text-xl font-bold text-gray-900">
                             Reviews ({property.ratings.length})
