@@ -34,7 +34,7 @@ export default async function AdminLayout({
                 <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-800 bg-gray-900">
                     <div className="flex h-full flex-col">
                         <div className="flex h-16 items-center border-b border-gray-800 px-6">
-                            <Link href="/admin" className="text-xl font-bold">
+                            <Link href="/" className="text-xl font-bold">
                                 <span className="text-emerald-500">MAKTABI</span> Admin
                             </Link>
                         </div>
