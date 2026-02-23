@@ -1,4 +1,6 @@
-generator client {
+﻿import fs from 'fs';
+
+const schema = `generator client {
   provider = "prisma-client-js"
 }
 
@@ -173,4 +175,7 @@ model Setting {
   id    String @id @default(cuid())
   key   String @unique
   value String
-}
+}`;
+
+fs.writeFileSync('prisma/schema.prisma', schema, 'utf8');
+console.log('✅ Schema updated with pricing types!');

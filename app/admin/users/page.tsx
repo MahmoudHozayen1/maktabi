@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Users, Plus, Pencil, Trash2, Shield, Crown, X } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, Shield, Crown, X, Phone, Calendar, Filter, Mail } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 interface User {
     id: string;
     name: string;
     email: string;
+    phone: string | null;
     role: string;
     createdAt: string;
 }
@@ -34,16 +35,31 @@ export default function UsersPage() {
         name: '',
         email: '',
         password: '',
+        phone: '',
         role: 'RENTER',
     });
     const [error, setError] = useState('');
+
+    // Filters
+    const [roleFilter, setRoleFilter] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [search, setSearch] = useState('');
 
     const isOwner = session?.user?.role === 'OWNER';
     const availableRoles = isOwner ? [...ROLES, OWNER_ROLE] : ROLES;
 
     const fetchUsers = async () => {
+        setLoading(true);
         try {
-            const res = await fetch('/api/admin/users');
+            const params = new URLSearchParams();
+            if (roleFilter) params.set('role', roleFilter);
+            if (dateFrom) params.set('dateFrom', dateFrom);
+            if (dateTo) params.set('dateTo', dateTo);
+            if (search) params.set('search', search);
+
+            const res = await fetch(`/api/admin/users?${params.toString()}`);
             const data = await res.json();
             setUsers(data.users || []);
         } catch (err) {
@@ -55,11 +71,24 @@ export default function UsersPage() {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [roleFilter, dateFrom, dateTo]);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        fetchUsers();
+    };
+
+    const clearFilters = () => {
+        setRoleFilter('');
+        setDateFrom('');
+        setDateTo('');
+        setSearch('');
+        fetchUsers();
+    };
 
     const handleAddUser = () => {
         setEditingUser(null);
-        setFormData({ name: '', email: '', password: '', role: 'RENTER' });
+        setFormData({ name: '', email: '', password: '', phone: '', role: 'RENTER' });
         setError('');
         setShowModal(true);
     };
@@ -74,6 +103,7 @@ export default function UsersPage() {
             name: user.name,
             email: user.email,
             password: '',
+            phone: user.phone || '',
             role: user.role,
         });
         setError('');
@@ -160,9 +190,22 @@ export default function UsersPage() {
                 return 'bg-emerald-500/10 text-emerald-500';
             case 'RENTER':
                 return 'bg-blue-500/10 text-blue-500';
+            case 'INVESTOR':
+                return 'bg-purple-500/10 text-purple-500';
+            case 'LANDLORD_MARKETING':
+            case 'LANDLORD_MANAGED':
+                return 'bg-orange-500/10 text-orange-500';
             default:
                 return 'bg-gray-500/10 text-gray-400';
         }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
     };
 
     return (
@@ -179,6 +222,74 @@ export default function UsersPage() {
                 </Button>
             </div>
 
+            {/* Search & Filters */}
+            <div className="mb-4 flex flex-wrap gap-4">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search by name or email..."
+                        className="w-64 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    />
+                    <Button type="submit" variant="secondary">Search</Button>
+                </form>
+
+                <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm ${showFilters ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-gray-700 text-gray-400 hover:border-gray-600'
+                        }`}
+                >
+                    <Filter className="h-4 w-4" />
+                    Filters
+                </button>
+
+                {(roleFilter || dateFrom || dateTo) && (
+                    <button onClick={clearFilters} className="text-sm text-gray-400 hover:text-white">
+                        Clear all
+                    </button>
+                )}
+            </div>
+
+            {/* Filters Panel */}
+            {showFilters && (
+                <div className="mb-6 rounded-xl border border-gray-800 bg-gray-900 p-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <div>
+                            <label className="mb-2 block text-sm text-gray-400">Role</label>
+                            <select
+                                value={roleFilter}
+                                onChange={(e) => setRoleFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                            >
+                                <option value="">All Roles</option>
+                                {availableRoles.map((role) => (
+                                    <option key={role.value} value={role.value}>{role.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm text-gray-400">Joined From</label>
+                            <input
+                                type="date"
+                                value={dateFrom}
+                                onChange={(e) => setDateFrom(e.target.value)}
+                                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm text-gray-400">Joined To</label>
+                            <input
+                                type="date"
+                                value={dateTo}
+                                onChange={(e) => setDateTo(e.target.value)}
+                                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Stats */}
             <div className="mb-8 grid gap-4 sm:grid-cols-4">
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
@@ -186,14 +297,8 @@ export default function UsersPage() {
                     <div className="text-sm text-gray-400">Total Users</div>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold text-yellow-500">
-                        {users.filter((u) => u.role === 'OWNER').length}
-                    </div>
-                    <div className="text-sm text-gray-400">Owners</div>
-                </div>
-                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
                     <div className="text-2xl font-bold text-emerald-500">
-                        {users.filter((u) => u.role === 'ADMIN').length}
+                        {users.filter((u) => u.role === 'ADMIN' || u.role === 'OWNER').length}
                     </div>
                     <div className="text-sm text-gray-400">Admins</div>
                 </div>
@@ -202,6 +307,12 @@ export default function UsersPage() {
                         {users.filter((u) => u.role === 'RENTER').length}
                     </div>
                     <div className="text-sm text-gray-400">Renters</div>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+                    <div className="text-2xl font-bold text-orange-500">
+                        {users.filter((u) => u.role.startsWith('LANDLORD')).length}
+                    </div>
+                    <div className="text-sm text-gray-400">Landlords</div>
                 </div>
             </div>
 
@@ -212,6 +323,7 @@ export default function UsersPage() {
                         <thead>
                             <tr className="border-b border-gray-800 text-left text-sm text-gray-400">
                                 <th className="px-6 py-4">User</th>
+                                <th className="px-6 py-4">Phone</th>
                                 <th className="px-6 py-4">Role</th>
                                 <th className="px-6 py-4">Joined</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
@@ -220,20 +332,20 @@ export default function UsersPage() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                                         Loading...
                                     </td>
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                                         <Users className="mx-auto mb-2 h-8 w-8" />
                                         No users found
                                     </td>
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user.id} className="border-b border-gray-800">
+                                    <tr key={user.id} className="border-b border-gray-800 hover:bg-gray-800/50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 {user.role === 'OWNER' && (
@@ -241,17 +353,36 @@ export default function UsersPage() {
                                                 )}
                                                 <div>
                                                     <div className="font-medium">{user.name}</div>
-                                                    <div className="text-sm text-gray-400">{user.email}</div>
+                                                    <div className="flex items-center gap-1 text-sm text-gray-400">
+                                                        <Mail className="h-3 w-3" />
+                                                        {user.email}
+                                                    </div>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {user.phone ? (
+                                                <a
+                                                    href={`tel:${user.phone}`}
+                                                    className="flex items-center gap-1 text-sm text-emerald-500 hover:underline"
+                                                >
+                                                    <Phone className="h-3 w-3" />
+                                                    {user.phone}
+                                                </a>
+                                            ) : (
+                                                <span className="text-sm text-gray-500">-</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeStyle(user.role)}`}>
                                                 {user.role}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-400">
-                                            {new Date(user.createdAt).toLocaleDateString()}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-1 text-sm text-gray-400">
+                                                <Calendar className="h-3 w-3" />
+                                                {formatDate(user.createdAt)}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
@@ -355,6 +486,19 @@ export default function UsersPage() {
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-gray-300">
+                                    Phone
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder="+20 10 1234 5678"
+                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-emerald-500 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-300">
                                     Password {editingUser && '(leave blank to keep current)'}
                                 </label>
                                 <input
@@ -382,11 +526,6 @@ export default function UsersPage() {
                                         </option>
                                     ))}
                                 </select>
-                                {editingUser?.role === 'OWNER' && (
-                                    <p className="mt-1 text-xs text-yellow-500">
-                                        Owner role cannot be changed
-                                    </p>
-                                )}
                             </div>
 
                             <div className="flex gap-3 pt-4">

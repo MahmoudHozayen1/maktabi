@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
         const status = searchParams.get('status');
         const type = searchParams.get('type');
         const search = searchParams.get('search');
+        const dateFrom = searchParams.get('dateFrom');
+        const dateTo = searchParams.get('dateTo');
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
@@ -38,6 +40,18 @@ export async function GET(request: NextRequest) {
             }
         }
 
+        if (dateFrom || dateTo) {
+            where.createdAt = {};
+            if (dateFrom) {
+                where.createdAt.gte = new Date(dateFrom);
+            }
+            if (dateTo) {
+                const endDate = new Date(dateTo);
+                endDate.setDate(endDate.getDate() + 1);
+                where.createdAt.lte = endDate;
+            }
+        }
+
         const properties = await prisma.property.findMany({
             where,
             include: {
@@ -45,6 +59,7 @@ export async function GET(request: NextRequest) {
                     select: {
                         name: true,
                         email: true,
+                        phone: true,
                     },
                 },
             },
@@ -58,7 +73,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST create new property (admin only - for coworking spaces)
+// POST create new property (admin only)
 export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
@@ -74,6 +89,9 @@ export async function POST(request: NextRequest) {
                 title: body.title,
                 description: body.description,
                 price: body.price,
+                priceDaily: body.priceDaily || null,
+                priceHourly: body.priceHourly || null,
+                pricingType: body.pricingType || 'MONTHLY',
                 size: body.size,
                 rooms: body.rooms || null,
                 type: body.type,
@@ -86,7 +104,7 @@ export async function POST(request: NextRequest) {
                 amenities: body.amenities || [],
                 images: body.images || [],
                 featured: body.featured || false,
-                ownerId: session.user.id, // Admin is the owner
+                ownerId: session.user.id,
             },
         });
 

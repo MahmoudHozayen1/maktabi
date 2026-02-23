@@ -20,6 +20,9 @@ export default function NewPropertyPage() {
         title: '',
         description: '',
         price: '',
+        priceDaily: '',
+        priceHourly: '',
+        pricingType: 'MONTHLY',
         size: '',
         rooms: '',
         type: defaultType,
@@ -68,6 +71,9 @@ export default function NewPropertyPage() {
                     title: formData.title,
                     description: formData.description,
                     price: parseFloat(formData.price),
+                    priceDaily: formData.priceDaily ? parseFloat(formData.priceDaily) : null,
+                    priceHourly: formData.priceHourly ? parseFloat(formData.priceHourly) : null,
+                    pricingType: formData.type === 'COWORKING' ? formData.pricingType : 'MONTHLY',
                     size: parseFloat(formData.size),
                     rooms: formData.rooms ? parseInt(formData.rooms) : null,
                     type: formData.type,
@@ -96,6 +102,8 @@ export default function NewPropertyPage() {
         }
     };
 
+    const isCoworking = formData.type === 'COWORKING';
+
     return (
         <div>
             <div className="mb-8">
@@ -107,7 +115,7 @@ export default function NewPropertyPage() {
                     Back to Properties
                 </Link>
                 <h1 className="text-3xl font-bold">
-                    Add New {formData.type === 'COWORKING' ? 'Coworking Space' : 'Office'}
+                    Add New {isCoworking ? 'Coworking Space' : 'Office'}
                 </h1>
             </div>
 
@@ -126,7 +134,7 @@ export default function NewPropertyPage() {
                             <input
                                 type="radio"
                                 checked={formData.type === 'OFFICE'}
-                                onChange={() => setFormData({ ...formData, type: 'OFFICE' })}
+                                onChange={() => setFormData({ ...formData, type: 'OFFICE', pricingType: 'MONTHLY' })}
                                 className="h-4 w-4 text-emerald-500"
                             />
                             <span>Office</span>
@@ -153,7 +161,7 @@ export default function NewPropertyPage() {
                                 type="text"
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                placeholder="e.g., Modern Office in Maadi"
+                                placeholder={isCoworking ? 'e.g., The Hub Coworking - Zamalek' : 'e.g., Modern Office in Maadi'}
                                 className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
                                 required
                             />
@@ -169,9 +177,94 @@ export default function NewPropertyPage() {
                                 required
                             />
                         </div>
-                        <div className="grid gap-4 md:grid-cols-3">
+                    </div>
+                </div>
+
+                {/* Pricing */}
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+                    <h2 className="mb-6 text-lg font-bold">Pricing</h2>
+
+                    {isCoworking && (
+                        <div className="mb-4">
+                            <label className="mb-2 block text-sm font-medium text-gray-300">Pricing Type</label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={formData.pricingType === 'HOURLY'}
+                                        onChange={() => setFormData({ ...formData, pricingType: 'HOURLY' })}
+                                        className="h-4 w-4 text-emerald-500"
+                                    />
+                                    <span>Per Hour</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={formData.pricingType === 'DAILY'}
+                                        onChange={() => setFormData({ ...formData, pricingType: 'DAILY' })}
+                                        className="h-4 w-4 text-emerald-500"
+                                    />
+                                    <span>Per Day</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={formData.pricingType === 'MONTHLY'}
+                                        onChange={() => setFormData({ ...formData, pricingType: 'MONTHLY' })}
+                                        className="h-4 w-4 text-emerald-500"
+                                    />
+                                    <span>Per Month</span>
+                                </label>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                        {isCoworking ? (
+                            <>
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-gray-300">
+                                        Price per Hour (EGP)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.priceHourly}
+                                        onChange={(e) => setFormData({ ...formData, priceHourly: e.target.value })}
+                                        placeholder="e.g., 50"
+                                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-gray-300">
+                                        Price per Day (EGP)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.priceDaily}
+                                        onChange={(e) => setFormData({ ...formData, priceDaily: e.target.value })}
+                                        placeholder="e.g., 300"
+                                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-gray-300">
+                                        Price per Month (EGP)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.price}
+                                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                        placeholder="e.g., 5000"
+                                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
+                                        required
+                                    />
+                                </div>
+                            </>
+                        ) : (
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">Price (EGP/month)</label>
+                                <label className="mb-2 block text-sm font-medium text-gray-300">
+                                    Price (EGP/month)
+                                </label>
                                 <input
                                     type="number"
                                     value={formData.price}
@@ -180,27 +273,36 @@ export default function NewPropertyPage() {
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">
-                                    {formData.type === 'COWORKING' ? 'Capacity (seats)' : 'Size (sqm)'}
-                                </label>
-                                <input
-                                    type="number"
-                                    value={formData.size}
-                                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-gray-300">Rooms</label>
-                                <input
-                                    type="number"
-                                    value={formData.rooms}
-                                    onChange={(e) => setFormData({ ...formData, rooms: e.target.value })}
-                                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
-                                />
-                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Details */}
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+                    <h2 className="mb-6 text-lg font-bold">Details</h2>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-300">
+                                {isCoworking ? 'Capacity (seats)' : 'Size (sqm)'}
+                            </label>
+                            <input
+                                type="number"
+                                value={formData.size}
+                                onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-300">
+                                {isCoworking ? 'Private Rooms' : 'Rooms'}
+                            </label>
+                            <input
+                                type="number"
+                                value={formData.rooms}
+                                onChange={(e) => setFormData({ ...formData, rooms: e.target.value })}
+                                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-emerald-500 focus:outline-none"
+                            />
                         </div>
                     </div>
                 </div>

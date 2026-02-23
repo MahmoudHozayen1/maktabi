@@ -11,7 +11,7 @@ function isAdmin(role: string | undefined): boolean {
 }
 
 // GET all users (admin only)
-export async function GET() {
+export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !isAdmin(session.user?.role)) {
@@ -19,11 +19,45 @@ export async function GET() {
     }
 
     try {
+        const { searchParams } = new URL(request.url);
+        const role = searchParams.get('role');
+        const dateFrom = searchParams.get('dateFrom');
+        const dateTo = searchParams.get('dateTo');
+        const search = searchParams.get('search');
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+
+        if (role) where.role = role;
+
+        // Date filter
+        if (dateFrom || dateTo) {
+            where.createdAt = {};
+            if (dateFrom) {
+                where.createdAt.gte = new Date(dateFrom);
+            }
+            if (dateTo) {
+                const endDate = new Date(dateTo);
+                endDate.setDate(endDate.getDate() + 1);
+                where.createdAt.lte = endDate;
+            }
+        }
+
+        // Search by name or email
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+
         const users = await prisma.user.findMany({
+            where,
             select: {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
                 role: true,
                 createdAt: true,
                 image: true,
@@ -47,9 +81,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const { name, email, password, role } = await request.json();
+        const { name, email, password, phone, role } = await request.json();
 
-        // Validation
         if (!name || !email || !password) {
             return NextResponse.json(
                 { error: 'Name, email, and password are required' },
@@ -57,7 +90,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Only OWNER can create another OWNER
         if (role === 'OWNER' && session.user?.role !== 'OWNER') {
             return NextResponse.json(
                 { error: 'Only the Owner can create another Owner' },
@@ -65,7 +97,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if user exists
         const existingUser = await prisma.user.findUnique({
             where: { email },
         });
@@ -77,14 +108,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Create user
         const user = await prisma.user.create({
             data: {
                 name,
                 email,
+                phone: phone || null,
                 password: hashedPassword,
                 role: role || 'RENTER',
             },
@@ -92,6 +122,7 @@ export async function POST(request: NextRequest) {
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
                 role: true,
                 createdAt: true,
             },

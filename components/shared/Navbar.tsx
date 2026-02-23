@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X, User, LogOut, Heart, LayoutDashboard, ChevronDown, Shield } from 'lucide-react';
+import { Menu, X, User, LogOut, Heart, LayoutDashboard, ChevronDown, Shield, Settings } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 export default function Navbar() {
@@ -34,8 +34,8 @@ export default function Navbar() {
     return (
         <nav
             className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-                    ? 'border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm'
-                    : 'bg-white'
+                ? 'border-b border-gray-200 bg-white/95 backdrop-blur-xl shadow-sm'
+                : 'bg-white'
                 }`}
         >
             <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
@@ -89,7 +89,11 @@ export default function Navbar() {
                                 <Heart className="h-5 w-5" />
                             </Link>
                             <div className="relative group">
-                                <button className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-200">
+                                <button
+                                    aria-haspopup="true"
+                                    aria-expanded="false"
+                                    className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-200"
+                                >
                                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                                         <User className="h-3.5 w-3.5" />
                                     </div>
@@ -103,6 +107,13 @@ export default function Navbar() {
                                     >
                                         <LayoutDashboard className="h-4 w-4" />
                                         Dashboard
+                                    </Link>
+                                    <Link
+                                        href="/account"
+                                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                                    >
+                                        <Settings className="h-4 w-4" />
+                                        Account Settings
                                     </Link>
                                     <Link
                                         href="/list-property"
@@ -199,6 +210,13 @@ export default function Navbar() {
                                     onClick={() => setIsOpen(false)}
                                 >
                                     Dashboard
+                                </Link>
+                                <Link
+                                    href="/account"
+                                    className="rounded-lg px-4 py-3 text-gray-600 hover:bg-gray-100"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Account Settings
                                 </Link>
                                 <button
                                     onClick={() => signOut()}

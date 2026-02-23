@@ -1,26 +1,23 @@
-﻿import 'next-auth';
+﻿// Place this at project root: types/next-auth.d.ts
+// Restart TS server after adding
 
-type UserRole = 'VISITOR' | 'RENTER' | 'INVESTOR' | 'LANDLORD_MARKETING' | 'LANDLORD_MANAGED' | 'ADMIN' | 'OWNER';
+import { UserRole } from '@prisma/client';
 
 declare module 'next-auth' {
-    interface Session {
-        user: {
-            id: string;
-            email: string;
-            name: string;
-            image?: string;
-            role: UserRole;
-        };
+    interface User {
+        id: string;
+        role?: UserRole | string;
+        phone?: string | null;
     }
 
-    interface User {
-        role: UserRole;
+    interface Session {
+        user: User;
     }
 }
 
 declare module 'next-auth/jwt' {
     interface JWT {
-        id: string;
-        role: UserRole;
+        id?: string;
+        role?: UserRole | string;
     }
 }
