@@ -1,9 +1,11 @@
 ﻿import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getServerSession } from 'next-auth';
 import { MapPin, Users, Clock, Wifi, Coffee, Monitor } from 'lucide-react';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import Button from '@/components/ui/Button';
 import TrackLeadButton from '@/components/TrackLeadButton';
 import PropertyMap from '@/components/PropertyMap';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -11,30 +13,19 @@ import StarRating from '@/components/StarRating';
 import RatingInput from '@/components/RatingInput';
 import ReviewsList from '@/components/ReviewsList';
 import ImageGallery from '@/components/ImageGallery';
-import type { Property as PropertyModel, Rating as RatingModel, Favorite as FavoriteModel, User as UserModel } from '@prisma/client';
 
 export const revalidate = 60;
-
-// Property with relations types
-type RatingWithUser = RatingModel & { user: { name: string | null; image: string | null } };
-type FavoriteMaybe = FavoriteModel;
-type OwnerMinimal = { name: string | null; phone?: string | null } | null;
-
-type PropertyWithRelations = PropertyModel & {
-    owner: OwnerMinimal;
-    ratings: RatingWithUser[];
-    favorites?: FavoriteMaybe[] | null;
-};
 
 export default async function CoworkingDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const session = await getServerSession(authOptions);
 
-    const property = (await prisma.property.findUnique({
+    const property = await prisma.property.findUnique({
         where: { id },
         include: {
             owner: {
                 select: {
+                    id: true,
                     name: true,
                     phone: true,
                 },
@@ -54,19 +45,25 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                 where: { userId: session.user.id },
             } : false,
         },
-    })) as PropertyWithRelations | null;
+    });
 
     if (!property || property.type !== 'COWORKING') {
         notFound();
     }
 
-    const avgRating =
-        property.ratings.length > 0
-            ? property.ratings.reduce((acc, r) => acc + r.stars, 0) / property.ratings.length
-            : 0;
+    // Determine permission to see exact location
+    const viewerRole = session?.user?.role;
+    const viewerId = session?.user?.id;
+    const isAdminOrOwner = viewerRole === 'ADMIN' || viewerRole === 'OWNER';
+    const isUploader = !!(viewerId && property.ownerId === viewerId);
+    const showExact = isAdminOrOwner || isUploader;
+
+    const avgRating = property.ratings.length > 0
+        ? property.ratings.reduce((acc, r) => acc + r.stars, 0) / property.ratings.length
+        : 0;
 
     const userRating = session?.user?.id
-        ? property.ratings.find((r) => r.userId === session.user.id) || null
+        ? property.ratings.find((r) => r.userId === session.user.id)
         : null;
 
     const isFavorited = Array.isArray(property.favorites) && property.favorites.length > 0;
@@ -80,7 +77,6 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
         kitchen: { icon: Coffee, label: 'Kitchen Access' },
     };
 
-    // Helper to format price based on pricing type (these fields come from Prisma schema)
     const pricingType = property.pricingType ?? 'MONTHLY';
     const priceHourly = property.priceHourly ?? null;
     const priceDaily = property.priceDaily ?? null;
@@ -118,12 +114,13 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                     </div>
 
                     <div className="mb-4 flex flex-wrap items-center gap-4">
-                        <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">Property #{property.serialNumber}</span>
+                        <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
+                            Property #{property.serialNumber}
+                        </span>
                         <StarRating rating={avgRating} totalReviews={property.ratings.length} />
                     </div>
 
                     <h1 className="mb-4 text-3xl font-bold text-gray-900">{property.title}</h1>
-
                     <div className="mb-6 flex items-center gap-2 text-gray-500">
                         <MapPin className="h-5 w-5 text-emerald-600" />
                         <span>{property.address}</span>
@@ -179,17 +176,20 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                     {property.lat && property.lng && (
                         <div className="mb-8">
                             <h2 className="mb-4 text-xl font-bold text-gray-900">Location</h2>
-                            <PropertyMap lat={property.lat} lng={property.lng} title={property.title} />
+                            <PropertyMap
+                                lat={property.lat}
+                                lng={property.lng}
+                                title={property.title}
+                                propertyId={property.id}
+                                showExact={showExact}
+                            />
                         </div>
                     )}
 
                     <div className="mb-8">
                         <h2 className="mb-4 text-xl font-bold text-gray-900">Reviews ({property.ratings.length})</h2>
                         <div className="grid gap-6 lg:grid-cols-2">
-                            <RatingInput
-                                propertyId={property.id}
-                                existingRating={userRating ? { stars: userRating.stars, comment: userRating.comment } : null}
-                            />
+                            <RatingInput propertyId={property.id} existingRating={userRating ? { stars: userRating.stars, comment: userRating.comment } : null} />
                             <ReviewsList reviews={property.ratings} />
                         </div>
                     </div>
@@ -200,41 +200,21 @@ export default async function CoworkingDetailPage({ params }: { params: Promise<
                         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                             <div className="mb-4 text-center">
                                 <p className="text-sm text-gray-500">Starting from</p>
-                                <div className="text-3xl font-bold text-emerald-600">{(mainPrice.amount ?? 0).toLocaleString()} EGP</div>
+                                <div className="text-3xl font-bold text-emerald-600">{mainPrice.amount.toLocaleString()} EGP</div>
                                 <div className="text-gray-500">{mainPrice.label}</div>
                             </div>
 
-                            {(priceHourly || priceDaily || priceMonthly) && (
+                            {(priceHourly || priceDaily || property.price) && (
                                 <div className="mb-6 space-y-2 border-t border-gray-100 pt-4">
                                     <p className="text-xs font-medium text-gray-500 uppercase">All Pricing Options</p>
-                                    {priceHourly && (
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-600">Hourly</span>
-                                            <span className="font-semibold text-gray-900">{priceHourly.toLocaleString()} EGP/hr</span>
-                                        </div>
-                                    )}
-                                    {priceDaily && (
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-600">Daily</span>
-                                            <span className="font-semibold text-gray-900">{priceDaily.toLocaleString()} EGP/day</span>
-                                        </div>
-                                    )}
-                                    {priceMonthly && (
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-gray-600">Monthly</span>
-                                            <span className="font-semibold text-gray-900">{priceMonthly.toLocaleString()} EGP/mo</span>
-                                        </div>
-                                    )}
+                                    {priceHourly && <div className="flex items-center justify-between text-sm"><span className="text-gray-600">Hourly</span><span className="font-semibold text-gray-900">{priceHourly.toLocaleString()} EGP/hr</span></div>}
+                                    {priceDaily && <div className="flex items-center justify-between text-sm"><span className="text-gray-600">Daily</span><span className="font-semibold text-gray-900">{priceDaily.toLocaleString()} EGP/day</span></div>}
+                                    {property.price && <div className="flex items-center justify-between text-sm"><span className="text-gray-600">Monthly</span><span className="font-semibold text-gray-900">{property.price.toLocaleString()} EGP/mo</span></div>}
                                 </div>
                             )}
 
                             <div className="space-y-3">
-                                <TrackLeadButton
-                                    propertyId={property.id}
-                                    propertySerial={property.serialNumber}
-                                    propertyTitle={property.title}
-                                    phoneNumber={property.owner?.phone || '+201554515541'}
-                                />
+                                <TrackLeadButton propertyId={property.id} propertySerial={property.serialNumber} propertyTitle={property.title} phoneNumber={property.owner?.phone || '+201554515541'} />
                                 <FavoriteButton propertyId={property.id} initialFavorited={isFavorited} />
                             </div>
 
