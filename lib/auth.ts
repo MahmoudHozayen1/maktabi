@@ -1,16 +1,24 @@
-import { NextAuthOptions } from 'next-auth';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+﻿import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
-import prisma from './prisma';
+import prisma from '@/lib/prisma';
+import type { JWT } from 'next-auth/jwt';
+import type { Session, User } from 'next-auth';
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
+    session: {
+        strategy: 'jwt',
+    },
+    pages: {
+        signIn: '/login',
+    },
     providers: [
         GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID || '',
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+            clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
         }),
         CredentialsProvider({
             name: 'credentials',
@@ -20,7 +28,7 @@ export const authOptions: NextAuthOptions = {
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
-                    return null;
+                    throw new Error('Email and password are required');
                 }
 
                 const user = await prisma.user.findUnique({
@@ -28,46 +36,46 @@ export const authOptions: NextAuthOptions = {
                 });
 
                 if (!user || !user.password) {
-                    return null;
+                    throw new Error('Invalid email or password');
                 }
 
                 const isValid = await bcrypt.compare(credentials.password, user.password);
 
                 if (!isValid) {
-                    return null;
+                    throw new Error('Invalid email or password');
                 }
 
                 return {
                     id: user.id,
-                    email: user.email,
                     name: user.name,
-                    role: user.role,
+                    email: user.email,
                     image: user.image,
+                    role: user.role,
+                    phone: user.phone,
                 };
             },
         }),
     ],
-    session: {
-        strategy: 'jwt',
-    },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user }: { token: JWT; user?: User }) {
             if (user) {
                 token.id = user.id;
-                token.role = user.role;
+                token.role = user.role ?? 'RENTER';
+                token.phone = user.phone ?? null;
             }
             return token;
         },
-        async session({ session, token }) {
+
+        async session({ session, token }: { session: Session; token: JWT }) {
             if (session.user) {
-                session.user.id = token.id;
-                session.user.role = token.role;
+                session.user.id = token.id ?? '';
+                session.user.role = token.role ?? 'RENTER';
+                session.user.phone = token.phone ?? null;
             }
             return session;
         },
     },
-    pages: {
-        signIn: '/login',
-        error: '/login',
-    },
+    secret: process.env.NEXTAUTH_SECRET,
 };
+
+export default authOptions;
