@@ -75,9 +75,15 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
                     </div>
 
                     <h1 className="mb-4 text-3xl font-bold text-gray-900">{property.title}</h1>
+
+                    {/* Address: hide exact address for non-authorized users */}
                     <div className="mb-6 flex items-center gap-2 text-gray-500">
                         <MapPin className="h-5 w-5 text-emerald-600" />
-                        <span>{property.address}</span>
+                        {showExact ? (
+                            <span>{property.address}</span>
+                        ) : (
+                            <span>Approximate area shown on map</span>
+                        )}
                     </div>
 
                     <div className="mb-8 grid grid-cols-3 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-6">
@@ -156,7 +162,7 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
                                 propertyId={property.id}
                                 propertySerial={property.serialNumber}
                                 propertyTitle={property.title}
-                                phoneNumber={property.owner?.phone || '+201554515541'}
+                                phoneNumber={showExact ? (property.owner?.phone || '+201554515541') : '+201554515541'}
                             />
                             <Button variant="secondary" className="w-full">
                                 Schedule Visit
@@ -166,6 +172,12 @@ export default async function OfficeDetailPage({ params }: { params: Promise<{ i
                         <div className="mt-6 border-t border-gray-200 pt-6">
                             <p className="text-sm text-gray-500">Listed by</p>
                             <p className="font-medium text-gray-900">{property.owner?.name || 'MAKTABI'}</p>
+                            {/* show phone only to authorized users */}
+                            {showExact && property.owner?.phone && (
+                                <div className="mt-2 text-sm text-gray-600">
+                                    <strong>Contact:</strong> <a href={`tel:${property.owner.phone}`} className="text-emerald-600">{property.owner.phone}</a>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
