@@ -13,18 +13,45 @@ interface Settings {
 export default function AdminSettingsPage() {
     const [settings, setSettings] = useState<Settings>({
         whatsappNumber: '+201554515541',
-        supportEmail: 'support@maktabi.com',
-        websiteUrl: 'https://maktabi.com',
+        supportEmail: 'support@maktabi.app',
+        websiteUrl: 'https://maktabi.app',
     });
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [saved, setSaved] = useState(false);
+    const [error, setError] = useState('');
+
+    // Load settings on mount
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/admin/settings');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.settings) {
+                        setSettings({
+                            whatsappNumber: data.settings.whatsappNumber || '+201554515541',
+                            supportEmail: data.settings.supportEmail || 'support@maktabi.app',
+                            websiteUrl: data.settings.websiteUrl || 'https://maktabi.app',
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+            } finally {
+                setInitialLoading(false);
+            }
+        };
+
+        fetchSettings();
+    }, []);
 
     const handleSave = async () => {
         setLoading(true);
         setSaved(false);
+        setError('');
 
         try {
-            // Save settings to API
             const res = await fetch('/api/admin/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -34,13 +61,25 @@ export default function AdminSettingsPage() {
             if (res.ok) {
                 setSaved(true);
                 setTimeout(() => setSaved(false), 3000);
+            } else {
+                const data = await res.json();
+                setError(data.error || 'Failed to save settings');
             }
-        } catch (error) {
-            console.error('Failed to save settings:', error);
+        } catch (err) {
+            console.error('Failed to save settings:', err);
+            setError('Failed to save settings');
         } finally {
             setLoading(false);
         }
     };
+
+    if (initialLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="text-gray-400">Loading settings...</div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -110,6 +149,9 @@ export default function AdminSettingsPage() {
                     </Button>
                     {saved && (
                         <span className="text-sm text-emerald-500">Settings saved successfully!</span>
+                    )}
+                    {error && (
+                        <span className="text-sm text-red-500">{error}</span>
                     )}
                 </div>
             </div>
