@@ -91,11 +91,14 @@ export default function PropertyMap({
                 ) : (
                     <>
                         {/* Circle showing obfuscated area (centered at the obfuscated point) */}
-                        <Circle center={mapCenter} radius={usedRadius} pathOptions={{ color: '#F59E0B', fillColor: '#FDE68A', fillOpacity: 0.25 }} />
-                        {/* small marker at the approximate point for context */}
-                        <Marker position={mapCenter} icon={makeDivIcon('#F59E0B')}>
-                            <Tooltip>Approximate area (not exact)</Tooltip>
-                        </Marker>
+                        <Circle
+                            center={mapCenter}
+                            radius={usedRadius}
+                            pathOptions={{ color: '#F59E0B', fillColor: '#FDE68A', fillOpacity: 0.25 }}
+                        >
+                            {/* Attach a tooltip to the circle instead of rendering a center marker */}
+                            <Tooltip direction="top">Approximate area (not exact)</Tooltip>
+                        </Circle>
                     </>
                 )}
             </MapContainer>
