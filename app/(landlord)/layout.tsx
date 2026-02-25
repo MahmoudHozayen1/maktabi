@@ -1,4 +1,4 @@
-import { getServerSession } from 'next-auth';
+﻿import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import Navbar from '@/components/shared/Navbar';
@@ -18,7 +18,7 @@ export default async function LandlordLayout({
     return (
         <>
             <Navbar />
-            <main className="min-h-screen bg-black text-white">{children}</main>
+            <main className="min-h-screen bg-white text-gray-900">{children}</main>
             <Footer />
         </>
     );
