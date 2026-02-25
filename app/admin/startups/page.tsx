@@ -63,7 +63,7 @@ export default function AdminStartupsPage() {
     };
 
     const deleteStartup = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this startup?')) return;
+        if (!confirm('Are you sure you want to delete this startup? ')) return;
 
         try {
             const res = await fetch(`/api/admin/startups/${id}`, {
