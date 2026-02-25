@@ -63,3 +63,39 @@ html {
 .shadow-soft {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
+/* --- admin light theme overrides --- */
+/* Targets admin pages using the `admin-layout` wrapper to convert dark admin panels to light */
+.admin-layout .bg-gray-900 {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+.admin-layout .bg-gray-950 {
+    background-color: #f9fafb !important;
+    color: #111827 !important;
+}
+
+.admin-layout .border-gray-800 {
+    border-color: #e5e7eb !important;
+}
+
+.admin-layout .border-gray-900 {
+    border-color: #e5e7eb !important;
+}
+
+.admin-layout .text-gray-400 {
+    color: #6b7280 !important; /* muted text */
+}
+
+.admin-layout .text-white {
+    color: #111827 !important;
+}
+
+.admin-layout .hover\:bg-gray-800:hover {
+    background-color: #f3f4f6 !important;
+}
+
+/* Keep badge and accent colors as-is but ensure readable on light backgrounds */
+.admin-layout .bg-emerald-500\/10 {
+    background-color: rgba(16,185,129,0.06) !important;
+}
