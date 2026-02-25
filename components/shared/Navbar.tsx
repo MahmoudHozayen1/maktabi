@@ -44,7 +44,7 @@ export default function Navbar() {
                     <Image
                         src="/logo.jpeg"
                         alt="MAKTABI"
-                        width={128}
+                        width={64}
                         height={64}
                         className="rounded-xl object-contain"
                     />
