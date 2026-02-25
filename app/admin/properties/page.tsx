@@ -247,7 +247,7 @@ export default function AdminPropertiesPage() {
             {/* Stats */}
             <div className="mb-6 grid gap-4 sm:grid-cols-5">
                 <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold">{properties.length}</div>
+                    <div className="text-2xl font-bold text-white">{properties.length}</div>
                     <div className="text-sm text-gray-400">Total</div>
                 </div>
                 <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
@@ -342,8 +342,8 @@ export default function AdminPropertiesPage() {
                                         </td>
                                         <td className="px-4 py-4">
                                             <span className={`rounded-full px-2 py-1 text-xs font-medium ${property.type === 'OFFICE'
-                                                    ? 'bg-blue-500/10 text-blue-500'
-                                                    : 'bg-purple-500/10 text-purple-500'
+                                                ? 'bg-blue-500/10 text-blue-500'
+                                                : 'bg-purple-500/10 text-purple-500'
                                                 }`}>
                                                 {property.type}
                                             </span>
