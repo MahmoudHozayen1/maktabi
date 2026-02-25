@@ -316,7 +316,7 @@ export default function AdminPropertiesPage() {
                                         </td>
                                         <td className="px-4 py-4">
                                             <div>
-                                                <div className="font-medium">{property.title}</div>
+                                                <div className="font-medium text-white">{property.title}</div>
                                                 <div className="text-sm text-gray-400">
                                                     {property.district}, {property.city}
                                                 </div>
@@ -324,7 +324,7 @@ export default function AdminPropertiesPage() {
                                         </td>
                                         <td className="px-4 py-4">
                                             <div>
-                                                <div className="text-sm">{property.owner?.name || 'N/A'}</div>
+                                                <div className="text-sm text-white">{property.owner?.name || 'N/A'}</div>
                                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                                     <Phone className="h-3 w-3" />
                                                     {property.owner?.phone ? (
@@ -348,7 +348,7 @@ export default function AdminPropertiesPage() {
                                                 {property.type}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-4 text-sm">
+                                        <td className="px-4 py-4 text-sm text-white">
                                             {property.price.toLocaleString()} EGP
                                         </td>
                                         <td className="px-4 py-4">

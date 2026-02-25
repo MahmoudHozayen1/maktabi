@@ -352,7 +352,7 @@ export default function UsersPage() {
                                                     <Crown className="h-5 w-5 text-yellow-500" />
                                                 )}
                                                 <div>
-                                                    <div className="font-medium">{user.name}</div>
+                                                    <div className="font-medium text-white">{user.name}</div>
                                                     <div className="flex items-center gap-1 text-sm text-gray-400">
                                                         <Mail className="h-3 w-3" />
                                                         {user.email}

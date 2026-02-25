@@ -215,20 +215,20 @@ export default function AdminStartupsPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="font-medium">{startup.name}</div>
+                                            <div className="font-medium text-white">{startup.name}</div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-emerald-500">
                                             {startup.sector}
                                         </td>
-                                        <td className="px-6 py-4 text-sm">{startup.stage}</td>
-                                        <td className="px-6 py-4 text-sm">
+                                        <td className="px-6 py-4 text-sm text-white">{startup.stage}</td>
+                                        <td className="px-6 py-4 text-sm text-white">
                                             {startup.fundingNeeded
                                                 ? `${startup.fundingNeeded.toLocaleString()} EGP`
                                                 : '-'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm">
-                                                <div>{startup.founder?.name || 'N/A'}</div>
+                                                <div className="text-white">{startup.founder?.name || 'N/A'}</div>
                                                 <div className="text-gray-400">{startup.founder?.email}</div>
                                             </div>
                                         </td>
