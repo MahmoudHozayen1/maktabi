@@ -1,4 +1,5 @@
-﻿import fs from 'fs';
+﻿
+import fs from 'fs';
 
 const schema = `generator client {
   provider = "prisma-client-js"
@@ -128,7 +129,8 @@ model Rating {
   userId     String
   user       User     @relation(fields: [userId], references: [id])
   propertyId String
-  property   Property @relation(fields: [propertyId], references: [id])
+  // cascade when property deleted
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   @@unique([userId, propertyId])
 }
 
@@ -138,7 +140,8 @@ model Favorite {
   userId     String
   user       User     @relation(fields: [userId], references: [id])
   propertyId String
-  property   Property @relation(fields: [propertyId], references: [id])
+  // cascade when property deleted
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   @@unique([userId, propertyId])
 }
 
@@ -152,7 +155,8 @@ model Lead {
   userId     String?
   user       User?    @relation(fields: [userId], references: [id])
   propertyId String
-  property   Property @relation(fields: [propertyId], references: [id])
+  // cascade when property deleted
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Startup {
@@ -178,4 +182,4 @@ model Setting {
 }`;
 
 fs.writeFileSync('prisma/schema.prisma', schema, 'utf8');
-console.log('✅ Schema updated with pricing types!');
+console.log('✅ Schema updated with pricing types and cascade deletes!');
