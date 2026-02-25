@@ -39,19 +39,15 @@ export default function Navbar() {
                 }`}
         >
             <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-                {/* Logo */}
+                {/* Logo only: removed redundant text and adjusted size */}
                 <Link href="/" className="flex items-center gap-3">
                     <Image
                         src="/logo.jpeg"
                         alt="MAKTABI"
-                        width={64}
-                        height={64}
-                        className="rounded-xl"
+                        width={48}
+                        height={48}
+                        className="rounded-xl object-contain"
                     />
-                    <span className="text-2xl font-bold tracking-tight text-gray-900">
-                        MAKTABI
-                        <span className="text-emerald-500">.</span>
-                    </span>
                 </Link>
 
                 {/* Desktop Menu */}
