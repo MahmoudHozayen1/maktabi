@@ -91,7 +91,7 @@ export default function AdminSettingsPage() {
             <div className="max-w-2xl space-y-6">
                 {/* Contact Settings */}
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-                    <h2 className="mb-6 text-xl font-bold">Contact Information</h2>
+                    <h2 className="mb-6 text-xl font-bold text-white">Contact Information</h2>
 
                     <div className="space-y-4">
                         <div>

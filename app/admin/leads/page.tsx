@@ -126,7 +126,7 @@ export default function LeadsPage() {
             {/* Stats */}
             <div className="mb-8 grid gap-4 sm:grid-cols-4">
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                    <div className="text-2xl font-bold">{leads.length}</div>
+                    <div className="text-2xl font-bold text-white">{leads.length}</div>
                     <div className="text-sm text-gray-400">Total Leads</div>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
